@@ -1,0 +1,280 @@
+// 全局样式 + 设计 token（对齐 Web 前端 store-ai-assistant 的 globals.css 体系）
+// 颜色走 SCSS 变量 $xxx（见 src/styles/theme.scss，编译期替换为具体色值，
+// 避免微信 WXSS 对 CSS 变量 var() 支持不稳定导致样式失效）
+page {
+  background-color: $page;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, sans-serif;
+  color: $ink;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+view, text, button, input, textarea, scroll-view, image {
+  box-sizing: border-box;
+}
+
+// 页面容器：215px 画布居中（对齐 Web app-viewport）+ 底部给自定义 TabBar 留位
+.page {
+  max-width: 430PX;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: $page;
+  padding: 0 16px calc(110px + env(safe-area-inset-bottom));
+}
+
+// ============ 通用 SVG 图标（替代 emoji） ============
+.icon {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+// ============ 卡片 ============
+.ref-card {
+  background: $paper;
+  border: 1px solid #dce8de;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.ref-bento {
+  background: $paper;
+  border-radius: 24px;
+  padding: 16px;
+}
+.ref-empty {
+  border: 1px dashed $line-strong;
+  border-radius: 12px;
+  padding: 40px 0;
+  text-align: center;
+  color: $faint;
+  font-size: 13px;
+}
+
+// ============ 按钮 ============
+.ref-primary {
+  background: $green;
+  color: #fff;
+  border-radius: 12px;
+  min-height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 5px 12px rgba(0, 109, 55, 0.16);
+}
+.ref-primary[disabled] {
+  background: #b8d8c6;
+  box-shadow: none;
+}
+.ref-secondary {
+  background: #fff;
+  color: $ink;
+  border: 1px solid #bbcbbb;
+  border-radius: 10px;
+  min-height: 40px;
+  line-height: 40px;
+  text-align: center;
+  font-size: 14px;
+}
+.ref-secondary[disabled] {
+  color: $faint;
+  border-color: $line;
+}
+
+// 紧凑小按钮
+.ref-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  height: 30px;
+  border-radius: 15px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  line-height: 30px;
+}
+.ref-btn-sm-primary { background: $green; color: #fff; }
+.ref-btn-sm-ghost { background: $green-soft; color: $green-dark; }
+.ref-btn-sm-danger { background: $red-soft; color: $red; }
+.ref-btn-sm-plain { background: #f3f7f3; color: $muted; }
+
+// ============ 输入框 ============
+.ref-field {
+  width: 100%;
+  height: 46px;
+  background: #fff;
+  border: 1px solid #cddfce;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: $ink;
+}
+.ref-field-placeholder {
+  color: $faint;
+}
+.ref-search {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 14px;
+  border: 1px solid $line;
+}
+.ref-search-input {
+  flex: 1;
+  font-size: 14px;
+  height: 100%;
+}
+.ref-search-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  opacity: 0.45;
+}
+
+// ============ 状态标签（五色 pill） ============
+.ref-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 10px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.ref-status-green { background: #e9f8f2; color: #006d37; }
+.ref-status-blue { background: #eaf5fd; color: #277db8; }
+.ref-status-yellow { background: #fff4dd; color: #a76400; }
+.ref-status-red { background: #ffebe8; color: #c4392e; }
+.ref-status-purple { background: #f3eeff; color: #7a4aa5; }
+.ref-status-gray { background: #eef0f2; color: #69707d; }
+
+// ============ 章节标题 ============
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+  margin: 18px 0 10px;
+}
+.section-title .section-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: $faint;
+}
+
+// ============ Toast ============
+.ref-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  background: #173a26;
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  z-index: 9999;
+  max-width: 80%;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+// ============ 骨架屏 ============
+.ref-skeleton {
+  background: linear-gradient(90deg, #f3f7f3 25%, #f3f7f3 37%, #f3f7f3 63%);
+  background-size: 400% 100%;
+  animation: ref-skeleton-shine 1.4s ease infinite;
+  border-radius: 8px;
+}
+@keyframes ref-skeleton-shine {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+// ============ 整屏 loading ============
+.app-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: $page;
+  z-index: 999;
+}
+.app-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #d9eadf;
+  border-top-color: $green;
+  border-radius: 50%;
+  animation: app-spin 0.8s linear infinite;
+}
+.app-loading-label {
+  margin-top: 12px;
+  color: $muted;
+  font-size: 13px;
+}
+@keyframes app-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ============ 底部 Tab 通用 ============
+.page-header {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+}
+
+// 兼容旧类名
+.card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 14px;
+  margin: 10px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.btn-primary {
+  background: $green;
+  color: #fff;
+  border-radius: 22px;
+  font-size: 14px;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  border: none;
+}
+.btn-primary[disabled] {
+  background: #b8d8c6;
+  color: #fff;
+}
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  line-height: 1.6;
+}
+.tag-green { background: #e6f4ec; color: $green; }
+.tag-blue { background: #e8f0ff; color: $blue; }
+.tag-orange { background: #fff3e0; color: $yellow; }
+.tag-red { background: #fdecee; color: $red; }
+.tag-gray { background: #f0f0f0; color: $faint; }
+.tag-purple { background: #f1ebfe; color: $purple; }
+.empty {
+  text-align: center;
+  color: $faint;
+  font-size: 13px;
+  padding: 40px 0;
+}

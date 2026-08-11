@@ -1,0 +1,76 @@
+// 我的任务页 —— 状态筛选 + 任务卡
+.tasks-page {
+  padding: 0 16px calc(80px + env(safe-area-inset-bottom));
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 7px;
+  padding: 14px 0 4px;
+}
+
+.filter-tab {
+  padding: 6px 14px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid $line;
+  color: $muted;
+  font-size: 13px;
+}
+.filter-tab.active {
+  background: $green;
+  color: #fff;
+  border-color: $green;
+  font-weight: 600;
+}
+
+.tasks-skeleton {
+  height: 130px;
+  margin-top: 12px;
+}
+
+.task-row {
+  padding: 14px;
+}
+
+.task-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1.4;
+}
+
+.task-meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.insight-box {
+  margin-top: 9px;
+  background: #effaf2;
+  border-left: 3px solid $green;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.insight-text {
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+.task-actions {
+  margin-top: 11px;
+  display: flex;
+  justify-content: flex-end;
+}

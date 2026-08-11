@@ -1,0 +1,324 @@
+// 会谈页 —— 对齐 Web MeetingClient（快速会谈设置 / 录音横幅 / 近期会谈列表）
+.meeting-page {
+  padding: 0 16px calc(80px + env(safe-area-inset-bottom));
+}
+
+// 快速会谈卡
+.rec-card {
+  margin-top: 14px;
+}
+
+.rec-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+  margin-bottom: 12px;
+}
+
+.cust-type-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.type-btn {
+  flex: 1;
+  height: 38px;
+  line-height: 38px;
+  text-align: center;
+  border-radius: 8px;
+  border: 1px solid $line;
+  background: #fff;
+  color: $muted;
+  font-size: 14px;
+}
+.type-btn.active {
+  border-color: $green;
+  background: $green-soft;
+  color: $green-dark;
+  font-weight: 600;
+}
+
+.cust-name-input {
+  height: 42px;
+}
+
+.pick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 42px;
+  border: 1px solid #cddfce;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #fff;
+  font-size: 14px;
+  color: $ink;
+}
+
+.pick-arrow {
+  color: $faint;
+}
+
+.cust-picker {
+  max-height: 200px;
+  margin-top: 6px;
+  border: 1px solid $line;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid $line;
+}
+.picker-item:last-child {
+  border-bottom: none;
+}
+
+.picker-sub {
+  font-size: 12px;
+  color: $faint;
+}
+
+.picker-empty {
+  display: block;
+  text-align: center;
+  padding: 20px 0;
+  color: $faint;
+  font-size: 13px;
+}
+
+.scene-label {
+  margin: 12px 0 7px;
+  font-size: 13px;
+  color: $muted;
+}
+
+.scene-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.scene-chip {
+  padding: 6px 13px;
+  border-radius: 16px;
+  background: #f3f7f3;
+  color: $muted;
+  font-size: 13px;
+}
+.scene-chip.active {
+  background: $green;
+  color: #fff;
+  font-weight: 600;
+}
+
+.consent-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid $line-strong;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  background: #fff;
+}
+.checkbox.checked {
+  background: #078a4c;
+  border-color: #078a4c;
+}
+
+.consent-text {
+  font-size: 13px;
+  color: $muted;
+}
+
+.rec-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+.rec-start.recording {
+  background: $red;
+  box-shadow: none;
+}
+
+.rec-upload {
+  margin-top: 9px;
+  text-align: center;
+  font-size: 13px;
+  color: $green;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+// 录音状态横幅
+.rec-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: $red-soft;
+  border: 1px solid #f5c6c0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 14px;
+}
+
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $red;
+  animation: rec-pulse 1s ease infinite;
+}
+
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.rec-time {
+  font-size: 14px;
+  font-weight: 700;
+  color: $red;
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+}
+
+.rec-btns {
+  display: flex;
+  gap: 7px;
+}
+
+.rec-btn {
+  padding: 5px 13px;
+  border-radius: 15px;
+  background: #fff;
+  color: $ink;
+  font-size: 12px;
+  border: 1px solid $line;
+}
+
+.rec-btn-stop {
+  background: $red;
+  color: #fff;
+  border-color: $red;
+}
+
+// 近期会谈列表
+.meet-skeleton {
+  height: 130px;
+}
+
+.meet-item {
+  padding: 14px;
+}
+
+.meet-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meet-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.meet-customer {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meet-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-left: 25px;
+}
+
+.meet-scene {
+  font-size: 12px;
+  color: $muted;
+  background: #f3f7f3;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.meet-score {
+  font-size: 13px;
+  color: $green;
+  font-weight: 600;
+}
+
+.meet-time {
+  font-size: 12px;
+  color: $faint;
+}
+
+.progress-track {
+  margin: 8px 0 0 25px;
+  height: 5px;
+  border-radius: 4px;
+  background: #f3f7f3;
+  overflow: hidden;
+}
+
+.progress-bar {
+  width: 66%;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, $green, $green-mid);
+  animation: rec-slide 1.2s ease infinite;
+}
+
+@keyframes rec-slide {
+  0% { transform: translateX(-30%); }
+  100% { transform: translateX(120%); }
+}
+
+.meet-fail {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  color: $red;
+  padding-left: 25px;
+}
+
+.meet-ops {
+  margin-top: 8px;
+  padding-left: 25px;
+}
+
+.meet-del {
+  font-size: 12px;
+  color: $red;
+  padding: 3px 6px;
+}

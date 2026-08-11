@@ -1,0 +1,314 @@
+// 客户详情 —— Hero / 今日简报 / 画像 / AI 记忆 / 时间线 / 底部询问条
+.cd-page {
+  padding: 0 16px calc(100px + env(safe-area-inset-bottom));
+}
+
+.cd-skeleton {
+  height: 120px;
+  margin-top: 14px;
+}
+
+// Hero
+.cd-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 0 6px;
+}
+
+.cd-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2ecc71, #008448);
+  color: #fff;
+  font-size: 34px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(0, 132, 72, 0.24);
+}
+
+.cd-name {
+  margin-top: 11px;
+  font-size: 14px;
+  font-weight: 800;
+  color: $ink;
+}
+
+.cd-sub {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.cd-last {
+  margin-top: 6px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.cd-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.cd-primary {
+  flex: 1;
+  min-height: 40px;
+  line-height: 40px;
+}
+
+.cd-secondary {
+  flex: 1;
+  min-height: 40px;
+  line-height: 40px;
+}
+
+// 今日简报
+.brief-card {
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.brief-k {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.brief-ok {
+  color: $green-dark;
+}
+.brief-red {
+  color: $red;
+}
+
+.brief-risk {
+  border-left: 3px solid $red;
+}
+
+.brief-v {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+.brief-q {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.7;
+}
+
+.brief-script {
+  border-left: 3px solid #2ecc71;
+  background: $green-soft;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.brief-script-text {
+  font-size: 13px;
+  color: $ink;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+// 画像
+.loyalty-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+}
+
+.loyalty-k {
+  width: 65px;
+  font-size: 13px;
+  color: $muted;
+  flex-shrink: 0;
+}
+
+.loyalty-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 5px;
+  background: #f3f7f3;
+  overflow: hidden;
+}
+
+.loyalty-bar {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #008448, #078a4c);
+}
+
+.loyalty-v {
+  width: 45px;
+  font-size: 14px;
+  font-weight: 700;
+  color: $green-dark;
+  text-align: right;
+}
+
+.persona-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.persona-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+// AI 记忆
+.memory-empty {
+  color: $faint;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 14px;
+}
+
+.memory-item {
+  padding: 12px;
+  border-left: 3px solid $green;
+}
+
+.memory-text {
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+// 会谈记录入口
+.cd-meeting {
+  text-align: center;
+  padding: 13px;
+  background: $green-soft;
+  border-color: #d7efe0;
+}
+
+.cd-meeting-text {
+  font-size: 14px;
+  color: $green-dark;
+  font-weight: 600;
+}
+
+// 时间线
+.timeline {
+  padding-left: 6px;
+}
+
+.tl-item {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 14px;
+  position: relative;
+}
+
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 13px;
+  bottom: 0;
+  width: 1px;
+  background: $line;
+}
+
+.tl-item:last-child::before {
+  display: none;
+}
+
+.tl-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $green;
+  margin-top: 4px;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.tl-body {
+  flex: 1;
+}
+
+.tl-time {
+  display: block;
+  font-size: 11px;
+  color: $faint;
+}
+
+.tl-text {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+// 底部询问条
+.ask-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(50px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #fff;
+  border-top: 1px solid $line;
+}
+
+.ask-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $green-soft;
+  color: $green-dark;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ask-input {
+  flex: 1;
+  height: 36px;
+  background: #f3f7f3;
+  border-radius: 18px;
+  padding: 0 13px;
+  font-size: 13px;
+}
+
+.ask-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+// 图标行 flex 覆盖
+.brief-k { display: flex; align-items: center; gap: 4px; }
+.cd-meeting-text { display: flex; align-items: center; gap: 4px; justify-content: center; }

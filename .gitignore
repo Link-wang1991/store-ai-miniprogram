@@ -1,0 +1,27 @@
+# dependencies
+/node_modules
+
+# build output
+/dist
+
+# Taro / webpack
+.swc/
+.temp/
+.cache/
+
+# misc
+.DS_Store
+*.log
+
+# local env files
+.env
+.env.local
+.env*.local
+
+# editor
+.idea/
+.vscode/
+*.iml
+
+# 微信开发者工具本地私有配置（含 urlCheck 等个人调试设置）
+project.private.config.json

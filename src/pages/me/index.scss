@@ -1,0 +1,133 @@
+// 我的页 —— 对齐 Web me 页（渐变底 + 4 快捷卡 + 管理入口 + 退出）
+.me-page {
+  padding: 0 16px calc(80px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #f9fdf9 0%, #f4fbf3 40%, #f7fbf7 100%);
+}
+
+.me-hero {
+  display: flex;
+  align-items: center;
+  padding: 22px 4px 14px;
+}
+
+.avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #008448, #078a4c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 132, 72, 0.2);
+  flex-shrink: 0;
+}
+
+.avatar-text {
+  font-size: 14px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.me-info {
+  margin-left: 13px;
+}
+
+.me-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+}
+
+.me-role {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: $muted;
+}
+
+// 常用快捷卡 2x2
+.quick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.quick-card {
+  width: calc(50% - 6px);
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.quick-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.ico-1 { background: #e9f8f2; }
+.ico-2 { background: #eaf5fd; }
+.ico-3 { background: #fff4dd; }
+.ico-4 { background: #f3eeff; }
+
+.quick-label {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+// 管理入口
+.mgmt-card {
+  display: flex;
+  align-items: center;
+}
+
+.mgmt-ico {
+  font-size: 20px;
+}
+
+.mgmt-main {
+  flex: 1;
+  margin-left: 10px;
+}
+
+.mgmt-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.mgmt-sub {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.mgmt-arrow {
+  font-size: 14px;
+  color: $faint;
+}
+
+// 退出登录
+.btn-logout {
+  margin-top: 18px;
+  height: 46px;
+  line-height: 46px;
+  background: #fff;
+  color: $red;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid $line;
+}

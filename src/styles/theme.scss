@@ -1,0 +1,20 @@
+// 全局 SCSS 变量（编译期替换为具体色值，避免微信 WXSS 对 CSS 变量 var() 支持不稳定导致的样式失效）
+// 通过 config/index.ts 的 sass.resource 自动注入所有 .scss 文件
+$green: #008448;
+$green-dark: #006d37;
+$green-mid: #078a4c;
+$green-soft: #edf8f0;
+$yellow: #c88400;
+$red: #d94b3d;
+$red-soft: #ffebe8;
+$blue: #335cff;
+$purple: #7a4aa5;
+$page: #f7fbf7;
+$paper: #ffffff;
+$surface-2: #f3f7f3;
+$surface-3: #edf3ed;
+$ink: #111318;
+$muted: #69707d;
+$faint: #9aa2ad;
+$line: #dfe9e1;
+$line-strong: #cdddcf;

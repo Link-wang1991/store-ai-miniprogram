@@ -1,0 +1,794 @@
+// AI 教练 —— 对齐 Web ChatClient（模式切换 / 上下文卡 / 空态引导 / 气泡 / 折叠引用 / 反馈 / 快捷问题）
+.chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
+  max-width: 430PX;
+  margin: 0 auto;
+}
+
+.chat-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+// 模式切换
+.mode-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px 0;
+}
+
+.mode-tab {
+  flex: 1;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  border-radius: 18px;
+  background: #f3f7f3;
+  color: $muted;
+  font-size: 14px;
+}
+.mode-tab.active {
+  background: $green;
+  color: #fff;
+  font-weight: 600;
+}
+
+// 上下文卡
+.ctx-card {
+  margin: 10px 16px 0;
+}
+
+.ctx-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ctx-badge {
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: $green-soft;
+  color: $green-dark;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ctx-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+}
+
+.ctx-switch {
+  font-size: 12px;
+  color: $green;
+  font-weight: 600;
+}
+
+.ctx-meta {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  color: $faint;
+}
+
+// 消息区
+.chat-scroll {
+  flex: 1;
+  padding: 12px 16px 8px;
+  min-height: 0;
+}
+
+.msg-row {
+  display: flex;
+  margin-bottom: 14px;
+}
+.msg-row.user {
+  justify-content: flex-end;
+}
+.msg-row.ai {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.ai-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 7px;
+  margin-top: 3px;
+}
+
+.msg-bubble {
+  max-width: 82%;
+  padding: 11px 13px;
+  border-radius: 12px;
+}
+.msg-bubble.user {
+  background: #5c5f60;
+  color: #fff;
+  border-radius: 12px 12px 4px 12px;
+}
+.msg-bubble.ai {
+  background: #fff;
+  color: $ink;
+  border: 1px solid $line;
+  border-radius: 12px 12px 12px 4px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.04);
+}
+.msg-bubble.error {
+  border-color: #f5c6c0;
+  background: $red-soft;
+}
+
+.rich-line {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 3px;
+}
+.rich-bold {
+  font-weight: 700;
+  color: $ink;
+}
+.rich-li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 3px;
+}
+.rich-dot {
+  color: $green;
+  font-weight: 700;
+  margin-right: 5px;
+  min-width: 16px;
+}
+.rich-li-body {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.msg-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+// 折叠详情
+.fold-block {
+  margin-top: 8px;
+  border-top: 1px solid $line;
+  padding-top: 7px;
+}
+
+.fold-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fold-title {
+  font-size: 12px;
+  color: $muted;
+  font-weight: 600;
+}
+
+.fold-arrow {
+  font-size: 11px;
+  color: $faint;
+}
+
+.fold-body {
+  margin-top: 6px;
+  background: #f3f7f3;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.fold-sec {
+  margin-bottom: 6px;
+}
+.fold-sec:last-child {
+  margin-bottom: 0;
+}
+
+.fold-sec-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: $green-dark;
+  margin-bottom: 3px;
+}
+
+.fold-sec-item {
+  display: block;
+  font-size: 12px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+.fold-empty {
+  font-size: 12px;
+  color: $faint;
+}
+
+// 反馈 chips
+.feedback-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fb-chip {
+  padding: 4px 9px;
+  border-radius: 14px;
+  background: #f3f7f3;
+  color: $muted;
+  font-size: 11px;
+}
+
+// 空态引导
+.empty-guide {
+  padding-top: 8px;
+}
+
+.guide-card {
+  background: $green-soft;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.guide-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $green-dark;
+  margin-bottom: 4px;
+}
+
+.guide-sub {
+  font-size: 13px;
+  color: $muted;
+  line-height: 1.6;
+}
+
+.guide-grid {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.guide-item {
+  flex: 1;
+  border-radius: 10px;
+  padding: 11px;
+}
+.guide-blue {
+  background: #eaf5fd;
+}
+.guide-green {
+  background: #e9f8f2;
+}
+
+.guide-k {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink;
+  margin-bottom: 5px;
+}
+
+.guide-v {
+  display: block;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+  margin-top: 2px;
+}
+
+.guide-risk {
+  border: 1px solid #f5c6c0;
+  background: $red-soft;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.guide-risk-k {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: $red;
+  margin-bottom: 3px;
+}
+
+.guide-risk-v {
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+}
+
+// 快捷问题
+.quick-scroll {
+  white-space: nowrap;
+  padding: 4px 0 6px;
+  flex-shrink: 0;
+}
+
+.quick-row {
+  display: inline-flex;
+  gap: 7px;
+  padding: 0 16px;
+}
+
+.quick-chip {
+  display: inline-block;
+  padding: 6px 13px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid $line;
+  color: $muted;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+// 输入区
+.chat-input-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 7px 12px calc(7px + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid $line;
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 38px;
+  max-height: 100px;
+  background: #f3f7f3;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.send-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 132, 72, 0.24);
+}
+.send-btn.disabled {
+  opacity: 0.5;
+}
+
+.loading-tip {
+  display: block;
+  color: $faint;
+  font-size: 13px;
+  padding: 4px 0;
+  animation: chat-pulse 1.4s ease infinite;
+}
+
+@keyframes chat-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+// 上下文卡内客户选择
+.cust-picker {
+  margin-top: 8px;
+  border: 1px solid $line;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.cust-picker-scroll {
+  max-height: 200px;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid $line;
+}
+.picker-item:last-child {
+  border-bottom: none;
+}
+
+.picker-sub {
+  font-size: 12px;
+  color: $faint;
+}
+
+.picker-empty {
+  display: block;
+  text-align: center;
+  padding: 20px 0;
+  color: $faint;
+  font-size: 13px;
+}
+
+// 引用条目（资料快照）
+.ref-item {
+  margin-bottom: 8px;
+  border: 1px solid $line;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+}
+.ref-item:last-child {
+  margin-bottom: 0;
+}
+
+.ref-item-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.ref-item-snippet {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.fold-note {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: $faint;
+}
+
+// 待办建议卡
+.proposal-card {
+  margin-top: 8px;
+  border: 1px solid #b6e0c1;
+  border-radius: 8px;
+  background: $green-soft;
+  padding: 10px;
+}
+
+.pc-head {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: $green-dark;
+}
+
+.pc-title {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.5;
+}
+
+.pc-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: $muted;
+}
+
+.pc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pc-applied {
+  margin-top: 7px;
+  border: 1px solid #b6e0c1;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 7px;
+}
+
+.pc-applied-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $green-dark;
+}
+
+.pc-applied-fb {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: $muted;
+  line-height: 1.6;
+}
+
+.pc-applied-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: $green-dark;
+  text-decoration: underline;
+}
+
+.pc-rejected {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: $faint;
+}
+
+.pc-create {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 13px;
+  border-radius: 15px;
+  border: 1px solid #b6e0c1;
+  background: #fff;
+  color: $green-dark;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+// 待办编辑面板
+.proposal-editor {
+  margin-top: 8px;
+  border: 1px solid #b6e0c1;
+  border-radius: 6px;
+  background: #fff;
+  padding: 9px;
+}
+
+.pe-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $green-dark;
+  margin-bottom: 6px;
+}
+
+.pe-field {
+  height: 38px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.pe-textarea {
+  height: auto;
+  min-height: 60px;
+  padding: 8px 12px;
+}
+
+.pe-k {
+  display: block;
+  font-size: 11px;
+  color: $muted;
+  margin: 5px 0 4px;
+}
+
+.pe-scroll {
+  white-space: nowrap;
+}
+
+.pe-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pe-chip {
+  padding: 5px 11px;
+  border-radius: 14px;
+  background: #f3f7f3;
+  color: $muted;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pe-chip.active {
+  background: $green;
+  color: #fff;
+  font-weight: 600;
+}
+
+.pe-loading {
+  font-size: 12px;
+  color: $faint;
+}
+
+.pe-date-row {
+  display: flex;
+  gap: 7px;
+}
+
+.pe-date {
+  flex: 1;
+  height: 38px;
+  line-height: 38px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.pe-error {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: $red;
+}
+
+.pe-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+// 反馈 chips 激活/禁用
+.fb-chip.active {
+  background: #e8f5e9;
+  color: #006d37;
+  border: 1px solid #8cd5a4;
+}
+.fb-chip.disabled {
+  opacity: 0.5;
+}
+
+// 图标行 flex 覆盖（Icon + 文字横排）
+.guide-risk-k { display: flex; align-items: center; gap: 4px; }
+
+// 会话历史 chips（经典对话，对齐 Web ClassicChatClient）
+.session-scroll {
+  white-space: nowrap;
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+}
+.session-row {
+  display: inline-flex;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+.session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 10px;
+  border-radius: 15px;
+  background: #fff;
+  border: 1px solid $line;
+  color: $muted;
+  font-size: 12px;
+}
+.session-chip.active {
+  background: $green-soft;
+  border-color: #b6e0c1;
+  color: $green-dark;
+  font-weight: 600;
+}
+.session-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
+}
+.session-del {
+  color: $faint;
+  font-size: 13px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+// 会话历史 chips（经典对话，对齐 Web ClassicChatClient）
+.session-scroll {
+  white-space: nowrap;
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+}
+.session-row {
+  display: inline-flex;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+.session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 10px;
+  border-radius: 15px;
+  background: #fff;
+  border: 1px solid $line;
+  color: $muted;
+  font-size: 12px;
+}
+.session-chip.active {
+  background: $green-soft;
+  border-color: #b6e0c1;
+  color: $green-dark;
+  font-weight: 600;
+}
+.session-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
+}
+.session-del {
+  color: $faint;
+  font-size: 13px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+// 输入框让位自定义 tabBar + 经典对话差异化样式
+.chat-page {
+  padding-bottom: calc(90px + env(safe-area-inset-bottom));
+}
+.classic-cust-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 16px 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: $green-soft;
+  font-size: 12px;
+  color: $green-dark;
+  flex-shrink: 0;
+}
+.classic-cust-bar .ccb-name {
+  font-weight: 700;
+}
+.classic-cust-bar .ccb-sub {
+  opacity: 0.7;
+}
+.classic-empty {
+  background: #f3f7f3;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: $muted;
+  line-height: 1.7;
+}
+.classic-empty .ce-bold {
+  font-weight: 600;
+  color: $ink;
+}
+.classic-empty .ce-sub {
+  font-size: 12px;
+  color: $faint;
+}
+.classic-empty .ce-link {
+  color: $green-dark;
+  font-weight: 600;
+  margin-left: 2px;
+}

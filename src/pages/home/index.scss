@@ -1,0 +1,343 @@
+// 首页工作台 —— 对齐 Web HomePage（欢迎区 / 搜索 / 4 统计卡 / AI 工作项 / 任务卡 / 客户机会 / FAB）
+.home-page {
+  padding: 0;
+}
+
+.home-hero {
+  position: relative;
+  background: linear-gradient(180deg, #f8faf9 0%, #e7f6f0 100%);
+  padding: 22px 16px 0;
+  border-radius: 0 0 24px 24px;
+}
+
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-right: 55px;
+}
+
+.hero-date {
+  font-size: 13px;
+  color: $muted;
+}
+
+.hero-title {
+  margin-top: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+  line-height: 1.5;
+}
+
+.hl-num {
+  color: $green;
+  font-size: 14px;
+  margin: 0 2px;
+}
+
+.hl-risk {
+  color: $red;
+}
+
+.mgmt-pill {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  background: $green;
+  color: #fff;
+  border-radius: 15px;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.hero-mic {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 7px 14px rgba(0, 109, 55, 0.24);
+}
+
+.home-search {
+  margin: 15px 16px 0;
+}
+.search-ph {
+  color: $faint;
+  font-size: 14px;
+}
+
+// 4 统计卡 2x2
+.summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 13px 16px 0;
+}
+
+.sum-card {
+  width: calc(50% - 6px);
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.sum-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.ico-green { background: #e9f8f2; }
+.ico-yellow { background: #fff4dd; }
+.ico-blue { background: #eaf5fd; }
+.ico-purple { background: #f3eeff; }
+
+.sum-num {
+  display: block;
+  margin-top: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+}
+
+.sum-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: $faint;
+}
+
+// AI 工作项
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: $muted;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: #f3f7f3;
+}
+
+.ai-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ai-tab {
+  padding: 7px 16px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid $line;
+  font-size: 13px;
+  color: $muted;
+}
+.ai-tab.active {
+  background: $green;
+  color: #fff;
+  border-color: $green;
+  font-weight: 600;
+}
+
+.home-skeleton {
+  height: 130px;
+  margin-bottom: 14px;
+}
+
+// 任务卡
+.task-card {
+  padding: 14px;
+}
+
+.task-head {
+  display: flex;
+  align-items: center;
+}
+
+.task-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: $green-soft;
+  color: $green-dark;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.task-main {
+  flex: 1;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.task-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1.4;
+  display: block;
+}
+
+.task-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: $faint;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insight-box {
+  margin-top: 10px;
+  background: #effaf2;
+  border-left: 3px solid $green;
+  border-radius: 6px;
+  padding: 9px 11px;
+}
+
+.insight-text {
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+.detail-box {
+  margin-top: 10px;
+  background: #f3f7f3;
+  border-radius: 6px;
+  padding: 9px 11px;
+}
+
+.detail-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $green-dark;
+  margin-bottom: 4px;
+}
+
+.detail-text {
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+.expand-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: $green;
+  font-weight: 600;
+}
+
+.script-block {
+  margin-top: 10px;
+  border-left: 3px solid #2ecc71;
+  padding-left: 10px;
+}
+
+.script-text {
+  font-size: 13px;
+  color: $ink;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.task-foot {
+  display: flex;
+  gap: 24px;
+  margin-top: 11px;
+}
+
+.foot-k {
+  font-size: 11px;
+  color: $faint;
+  display: block;
+}
+
+.foot-v {
+  font-size: 13px;
+  color: $ink;
+  font-weight: 600;
+  margin-top: 3px;
+  display: block;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.action-do {
+  flex: 1;
+}
+
+// 客户机会卡
+.opp-card {
+  padding: 14px;
+}
+
+.opp-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opp-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opp-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.opp-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: $green;
+  font-weight: 600;
+}
+
+// 右下 FAB
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 7px 16px rgba(0, 109, 55, 0.28);
+  z-index: 99;
+}

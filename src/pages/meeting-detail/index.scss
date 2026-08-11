@@ -1,0 +1,222 @@
+// 会谈详情 —— 信息卡 / 质量评分 / 6 分析卡 / 下一步跟进
+.detail-page {
+  padding: 0 16px calc(60px + env(safe-area-inset-bottom));
+}
+
+.detail-skeleton {
+  height: 110px;
+  margin-top: 14px;
+}
+
+.info-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.info-cell {
+  width: calc(50% - 6px);
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: 10px;
+  padding: 11px;
+  margin-bottom: 10px;
+}
+
+.info-k {
+  display: block;
+  font-size: 11px;
+  color: $faint;
+}
+
+.info-v {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+// 质量评分
+.score-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.score-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.score-ring {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-num {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.score-label {
+  margin-top: 6px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.score-right {
+  flex: 1;
+}
+
+.dim-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.dim-name {
+  width: 60px;
+  font-size: 12px;
+  color: $muted;
+  flex-shrink: 0;
+}
+
+.dim-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  background: #f3f7f3;
+  overflow: hidden;
+}
+
+.dim-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #008448, #078a4c);
+}
+
+.dim-val {
+  width: 40px;
+  font-size: 11px;
+  color: $faint;
+  text-align: right;
+}
+
+// 分析卡 2 列
+.analysis-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.ana-card {
+  width: calc(50% - 6px);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.ana-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.ana-green .ana-label { color: #006d37; }
+.ana-blue .ana-label { color: #277db8; }
+.ana-yellow .ana-label { color: #a76400; }
+.ana-red .ana-label { color: #c4392e; }
+
+.ana-text {
+  font-size: 12px;
+  color: $ink;
+  line-height: 1.6;
+}
+
+// 下一步跟进
+.next-card {
+  border-left: 3px solid #2ecc71;
+}
+
+.next-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: $green-dark;
+  margin-bottom: 7px;
+}
+
+.next-step {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+  margin-bottom: 5px;
+}
+
+.next-script {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+// 对话记录 —— 说话人身份 + 逐句转写（对齐 Web 对话记录 Tab）
+.speaker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.trans-item {
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.trans-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.trans-time {
+  font-size: 11px;
+  color: $faint;
+  flex: 1;
+}
+
+.trans-edited {
+  font-size: 11px;
+  color: $yellow;
+}
+
+.trans-text {
+  display: block;
+  margin-top: 7px;
+  font-size: 14px;
+  color: $ink;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.trans-revise {
+  display: inline-block;
+  margin-top: 7px;
+  font-size: 12px;
+  color: $green;
+  font-weight: 600;
+}
+
+// 图标行 flex 覆盖
+.next-step { display: flex; align-items: center; gap: 4px; }
