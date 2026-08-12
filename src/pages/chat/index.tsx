@@ -143,7 +143,7 @@ function ProposalEditor({
 
   useDidShow(() => {
     try {
-      ;(Taro.getCurrentInstance().page as any)?.getTabBar?.()?.setSelected?.(3)
+      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(3)
     } catch {}
   })
 

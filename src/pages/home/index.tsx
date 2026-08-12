@@ -39,7 +39,7 @@ export default function Home() {
 
   useDidShow(() => {
     try {
-      ;(Taro.getCurrentInstance().page as any)?.getTabBar?.()?.setSelected?.(2)
+      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(2)
     } catch {}
   })
 

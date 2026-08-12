@@ -50,7 +50,7 @@ export default function Meeting() {
 
   useDidShow(() => {
     try {
-      ;(Taro.getCurrentInstance().page as any)?.getTabBar?.()?.setSelected?.(0)
+      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(0)
     } catch {}
   })
 

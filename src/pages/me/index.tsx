@@ -11,7 +11,7 @@ export default function Me() {
 
   useDidShow(() => {
     try {
-      ;(Taro.getCurrentInstance().page as any)?.getTabBar?.()?.setSelected?.(4)
+      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(4)
     } catch {}
   })
 

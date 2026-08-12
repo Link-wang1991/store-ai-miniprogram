@@ -49,7 +49,7 @@ export default function Customers() {
 
   useDidShow(() => {
     try {
-      ;(Taro.getCurrentInstance().page as any)?.getTabBar?.()?.setSelected?.(1)
+      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(1)
     } catch {}
   })
 
