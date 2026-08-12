@@ -3,11 +3,13 @@ import { View, Text, Input, ScrollView } from '@tarojs/components'
 import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 import { meetingApi, customerApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
+import { sceneLabel, MEETING_SCENES } from '@/utils/scenes'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
 import './index.scss'
 
-const SCENE_FALLBACK = ['新客咨询', '护理服务', '成交沟通', '复购回访']
+// 场景兜底：{code, label}，后端 /api/meetings/scenes 返回的是对象数组（含 code/display_name/sort_order）
+const SCENE_FALLBACK = MEETING_SCENES.map(([code, label]) => ({ code, label }))
 
 function statusOf(m: any): { label: string; tag: string; color: string } {
   const s = String(m.status || '').toLowerCase()
@@ -31,7 +33,7 @@ export default function Meeting() {
   const [loading, setLoading] = useState(true)
   const [list, setList] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
-  const [scenes, setScenes] = useState<string[]>(SCENE_FALLBACK)
+  const [scenes, setScenes] = useState<{ code: string; label: string }[]>(SCENE_FALLBACK)
 
   // 快速会谈设置
   const [custType, setCustType] = useState<'new' | 'existing'>('new')
@@ -73,8 +75,16 @@ export default function Meeting() {
     load()
     const [c, s] = await Promise.all([customerApi.list(), meetingApi.scenes()])
     if (c.ok) setCustomers(c.data || [])
-    if (s.ok && Array.isArray(s.data) && s.data.length > 0) setScenes(s.data)
-    setScene((prev) => prev || SCENE_FALLBACK[0])
+    if (s.ok && Array.isArray(s.data) && s.data.length > 0) {
+      // 后端返回 [{code, display_name, sort_order}]，统一映射为 {code, label}
+      setScenes(
+        s.data.map((item: any) => ({
+          code: String(item.code || ''),
+          label: String(item.display_name || item.code || ''),
+        }))
+      )
+    }
+    setScene((prev) => prev || scenes[0].code)
   }
 
   async function load() {
@@ -88,6 +98,10 @@ export default function Meeting() {
 
   // ---- 录音 ----
   function startRec() {
+    if (recording) {
+      Taro.showToast({ title: '正在录音中…', icon: 'none' })
+      return
+    }
     if (!consent) {
       Taro.showToast({ title: '请先勾选已获客户同意', icon: 'none' })
       return
@@ -96,10 +110,45 @@ export default function Meeting() {
       Taro.showToast({ title: '请选择客户', icon: 'none' })
       return
     }
-    Taro.authorize({ scope: 'scope.record' })
+    Taro.showLoading({ title: '准备录音…', mask: false })
+
+    // 开发者工具模拟器 authorize 弹窗可能不出现导致 promise 卡死，用超时兜底
+    const authorize = () =>
+      Promise.race([
+        Taro.authorize({ scope: 'scope.record' }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('authorize_timeout')), 4000)
+        ),
+      ])
+
+    Taro.getSetting()
+      .then((s: any) => {
+        const granted = s?.authSetting?.['scope.record']
+        if (granted === false) {
+          Taro.hideLoading()
+          Taro.showModal({
+            title: '需要麦克风权限',
+            content: '请在设置中允许使用麦克风后重试',
+            confirmText: '去设置',
+            success: (r) => {
+              if (r.confirm) Taro.openSetting()
+            },
+          })
+          return null
+        }
+        return authorize()
+      })
       .then(() => {
+        Taro.hideLoading()
         const rm = Taro.getRecorderManager()
         recorderRef.current = rm
+        rm.onStart(() => {
+          setRecording(true)
+          setPaused(false)
+          setSeconds(0)
+          if (timerRef.current) clearInterval(timerRef.current)
+          timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000)
+        })
         rm.onStop((res) => {
           setRecording(false)
           setPaused(false)
@@ -107,19 +156,36 @@ export default function Meeting() {
           if (timerRef.current) clearInterval(timerRef.current)
           if (res.tempFilePath) submitAudio(res.tempFilePath)
         })
-        rm.onError(() => {
+        rm.onError((err) => {
           setRecording(false)
           setPaused(false)
           if (timerRef.current) clearInterval(timerRef.current)
-          Taro.showToast({ title: '录音出错，请重试', icon: 'none' })
+          const msg =
+            err?.errMsg && err.errMsg.indexOf('deny') >= 0
+              ? '麦克风权限被拒绝'
+              : '录音出错，请重试'
+          Taro.showToast({ title: msg, icon: 'none' })
         })
-        rm.start({ duration: 600000, sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 48000, format: 'mp3' })
-        setRecording(true)
-        setPaused(false)
-        setSeconds(0)
-        timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000)
+        try {
+          rm.start({ duration: 600000, sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 48000, format: 'mp3' })
+          // 立即进入录音态（不依赖 onStart 回调——真机调试模式下 onStart 可能不触发，
+          // 只等回调会导致点击后 UI 无任何变化，看起来"没反应"）
+          setRecording(true)
+          setPaused(false)
+          setSeconds(0)
+          if (timerRef.current) clearInterval(timerRef.current)
+          timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000)
+          Taro.showToast({ title: '录音中…', icon: 'none' })
+        } catch (e) {
+          setRecording(false)
+          Taro.showToast({ title: '录音启动失败，请检查麦克风', icon: 'none' })
+        }
       })
-      .catch(() => Taro.showToast({ title: '需要麦克风权限', icon: 'none' }))
+      .catch((err) => {
+        Taro.hideLoading()
+        const msg = err?.message === 'authorize_timeout' ? '未获得麦克风授权' : '需要麦克风权限'
+        Taro.showToast({ title: msg, icon: 'none' })
+      })
   }
 
   function togglePause() {
@@ -140,7 +206,7 @@ export default function Meeting() {
   }
 
   async function submitAudio(path: string) {
-    const body: any = { scene: scene || scenes[0], consent }
+    const body: any = { scene: scene || scenes[0].code, consent }
     if (custType === 'existing') body.customerId = custId
     else body.customerName = custName || `新客户 ${fmtNow()}`
     Taro.showLoading({ title: '创建会谈并上传录音…', mask: true })
@@ -164,6 +230,10 @@ export default function Meeting() {
   }
 
   async function uploadFile() {
+    if (recording) {
+      Taro.showToast({ title: '请先结束录音', icon: 'none' })
+      return
+    }
     if (!consent) {
       Taro.showToast({ title: '请先勾选已获客户同意', icon: 'none' })
       return
@@ -249,11 +319,11 @@ export default function Meeting() {
         <View className="scene-chips">
           {scenes.map((s) => (
             <View
-              key={s}
-              className={`scene-chip${(scene || scenes[0]) === s ? ' active' : ''}`}
-              onClick={() => setScene(s)}
+              key={s.code}
+              className={`scene-chip${(scene || scenes[0].code) === s.code ? ' active' : ''}`}
+              onClick={() => setScene(s.code)}
             >
-              {s}
+              {s.label}
             </View>
           ))}
         </View>
@@ -265,10 +335,10 @@ export default function Meeting() {
 
         <View className={`ref-primary rec-start${recording ? ' recording' : ''}`} onClick={startRec}>
           <Icon svg={ICN.mic('#fff')} size={32} />
-          <Text>开始录音会谈</Text>
+          <Text>{recording ? '录音中…' : '开始录音会谈'}</Text>
         </View>
-        <View className="rec-upload" onClick={uploadFile}>
-          上传已有录音转写
+        <View className={`rec-upload${recording ? ' rec-upload-disabled' : ''}`} onClick={uploadFile}>
+          {recording ? '录音中，暂不可上传文件' : '上传已有录音转写'}
         </View>
       </View>
 
@@ -315,7 +385,7 @@ export default function Meeting() {
                 <Text className={`ref-status ${st.tag}`}>{st.label}</Text>
               </View>
               <View className="meet-meta">
-                {m.scene ? <Text className="meet-scene">{m.scene}</Text> : null}
+                {m.scene ? <Text className="meet-scene">{sceneLabel(m.scene)}</Text> : null}
                 {m.quality_score != null ? <Text className="meet-score">{m.quality_score} 分</Text> : null}
                 <Text className="meet-time">{m.ended_at || m.duration || ''}</Text>
               </View>

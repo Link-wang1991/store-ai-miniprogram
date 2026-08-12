@@ -77,7 +77,8 @@ export const taskApi = {
 // -- 会谈 --
 export const meetingApi = {
   list: () => request<any[]>('/api/meetings'),
-  scenes: () => request<string[]>('/api/meetings/scenes'),
+  // 后端返回 [{code, display_name, sort_order}]；页面层负责映射为 {code,label}
+  scenes: () => request<{ code: string; display_name: string; sort_order: number }[]>('/api/meetings/scenes'),
   create: (data: { customerId?: string; customerName?: string; scene?: string; consent?: boolean }) =>
     request('/api/meetings', { method: 'POST', body: data }),
   delete: (id: string) => request(`/api/meetings/${id}/delete`, { method: 'POST' }),
