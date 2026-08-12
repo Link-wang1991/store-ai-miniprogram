@@ -85,14 +85,6 @@ export default function Home() {
     Taro.navigateTo({ url: `/pages/chat/index?new=1${q ? `&q=${encodeURIComponent(q)}` : ''}` })
   }
 
-  function onMgmt() {
-    if (user.role === 'super_admin') {
-      Taro.navigateTo({ url: '/pages/platform/index' })
-      return
-    }
-    Taro.showToast({ title: '管理后台开发中', icon: 'none' })
-  }
-
   return (
     <View className="page home-page">
       {/* 欢迎区 */}
@@ -100,19 +92,18 @@ export default function Home() {
         <View className="hero-top">
           <View className="hero-left">
             <Text className="hero-date">{fmtCnDate()}</Text>
-            <View className="hero-title">
-              <Text>早上好，{user.name || '伙伴'}。今天有</Text>
-              <Text className="hl-num">{todayTasks.length}</Text>
-              <Text>项跟进、</Text>
-              <Text className="hl-num hl-risk">{riskTasks.length}</Text>
-              <Text>项风险需要处理</Text>
+            <Text className="hero-greet">早上好，{user.name || '伙伴'}</Text>
+            <View className="hero-tags">
+              <View className="hero-tag tag-ok" onClick={() => Taro.switchTab({ url: '/pages/tasks/index' })}>
+                <Text className="tag-num">{todayTasks.length}</Text>
+                <Text className="tag-lbl">项跟进</Text>
+              </View>
+              <View className="hero-tag tag-risk" onClick={() => Taro.switchTab({ url: '/pages/tasks/index?filter=risk' })}>
+                <Text className="tag-num">{riskTasks.length}</Text>
+                <Text className="tag-lbl">项风险</Text>
+              </View>
             </View>
           </View>
-          {user.role && ['owner', 'admin', 'manager', 'super_admin'].includes(user.role) ? (
-            <View className="mgmt-pill" onClick={onMgmt}>
-              {user.role === 'super_admin' ? '平台管理' : '管理'}
-            </View>
-          ) : null}
         </View>
         <View className="hero-mic" onClick={() => goChat()}>
           <Icon svg={ICN.mic('#fff')} size={44} />
@@ -130,41 +121,51 @@ export default function Home() {
       {/* 4 统计卡 */}
       <View className="summary-grid">
         <View className="sum-card" onClick={() => Taro.navigateTo({ url: '/pages/customers/index?mode=priority' })}>
-          <View className="sum-ico ico-green"><Icon svg={ICN.trophy('#008448')} size={40} /></View>
-          <Text className="sum-num">{todayCustomers.length} 位</Text>
-          <Text className="sum-desc">需要优先处理</Text>
+          <View className="sum-ico ico-green"><Icon svg={ICN.trophy('#008448')} size={34} /></View>
+          <View className="sum-main">
+            <Text className="sum-num">{todayCustomers.length} 位</Text>
+            <Text className="sum-desc">需要优先处理</Text>
+          </View>
         </View>
         <View className="sum-card" onClick={() => Taro.showToast({ title: '任务页开发中', icon: 'none' })}>
-          <View className="sum-ico ico-yellow"><Icon svg={ICN.clock('#c88400')} size={40} /></View>
-          <Text className="sum-num">{todayTasks.length} 个</Text>
-          <Text className="sum-desc">动作待完成</Text>
+          <View className="sum-ico ico-yellow"><Icon svg={ICN.clock('#c88400')} size={34} /></View>
+          <View className="sum-main">
+            <Text className="sum-num">{todayTasks.length} 个</Text>
+            <Text className="sum-desc">动作待完成</Text>
+          </View>
         </View>
         <View className="sum-card" onClick={() => Taro.navigateTo({ url: '/pages/customers/index?pool=today' })}>
-          <View className="sum-ico ico-blue"><Icon svg={ICN.home('#335cff')} size={40} /></View>
-          <Text className="sum-num">{todayCustomers.length} 位</Text>
-          <Text className="sum-desc">需服务闭环</Text>
+          <View className="sum-ico ico-blue"><Icon svg={ICN.home('#335cff')} size={34} /></View>
+          <View className="sum-main">
+            <Text className="sum-num">{todayCustomers.length} 位</Text>
+            <Text className="sum-desc">需服务闭环</Text>
+          </View>
         </View>
         <View className="sum-card" onClick={() => Taro.showToast({ title: '经验审核开发中', icon: 'none' })}>
-          <View className="sum-ico ico-purple"><Icon svg={ICN.chat('#7a4aa5')} size={40} /></View>
-          <Text className="sum-num">{data?.pending_experience_reviews || 0} 条</Text>
-          <Text className="sum-desc">待负责人审核</Text>
+          <View className="sum-ico ico-purple"><Icon svg={ICN.chat('#7a4aa5')} size={34} /></View>
+          <View className="sum-main">
+            <Text className="sum-num">{data?.pending_experience_reviews || 0} 条</Text>
+            <Text className="sum-desc">待负责人审核</Text>
+          </View>
         </View>
       </View>
 
-      {/* AI 工作项 */}
-      <View className="section-title">
-        <Text>AI 工作项</Text>
-        <View className="tool-btn" onClick={load}>
-          <Icon svg={ICN.refresh('#69707d')} size={24} />
-          <Text>刷新</Text>
-        </View>
+      {/* 上（欢迎区/搜索/统计卡）与下（工作项）的分隔 */}
+      <View className="home-divider">
+        <View className="divider-dot" />
       </View>
+
+      {/* AI 工作项 */}
       <View className="ai-tabs">
         {AI_TABS.map((t) => (
           <View key={t.key} className={`ai-tab${tab === t.key ? ' active' : ''}`} onClick={() => setTab(t.key)}>
             {t.label}
           </View>
         ))}
+        <View className="tool-btn" onClick={load}>
+          <Icon svg={ICN.refresh('#69707d')} size={24} />
+          <Text>刷新</Text>
+        </View>
       </View>
 
       {loading ? (
