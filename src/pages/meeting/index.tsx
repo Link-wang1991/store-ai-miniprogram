@@ -6,6 +6,7 @@ import { isLoggedIn } from '@/utils/auth'
 import { sceneLabel, MEETING_SCENES } from '@/utils/scenes'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
+import { setActiveTab } from '@/utils/ui'
 import './index.scss'
 
 // 场景兜底：{code, label}，后端 /api/meetings/scenes 返回的是对象数组（含 code/display_name/sort_order）
@@ -51,9 +52,8 @@ export default function Meeting() {
   const [seconds, setSeconds] = useState(0)
 
   useDidShow(() => {
-    try {
-      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(0)
-    } catch {}
+    setActiveTab(0)
+    if (isLoggedIn()) loadAll()
   })
 
   useEffect(() => {
@@ -61,7 +61,6 @@ export default function Meeting() {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
-    loadAll()
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
@@ -220,7 +219,20 @@ export default function Meeting() {
     if (id) {
       const up = await meetingApi.uploadAudio(id, path)
       Taro.hideLoading()
-      Taro.showToast({ title: up.ok ? '上传成功，开始转写' : up.error || '上传失败', icon: 'none' })
+      if (!up.ok) {
+        Taro.showToast({ title: up.error || '上传失败', icon: 'none' })
+        resetForm()
+        load()
+        const modal = await Taro.showModal({
+          title: '录音尚未上传',
+          content: '会谈已保留。请进入详情重新选择录音上传，无需重新创建会谈。',
+          confirmText: '去处理',
+          confirmColor: '#008448',
+        })
+        if (modal.confirm) Taro.navigateTo({ url: `/pages/meeting-detail/index?id=${id}` })
+        return
+      }
+      Taro.showToast({ title: '上传成功，开始转写', icon: 'none' })
     } else {
       Taro.hideLoading()
       Taro.showToast({ title: '会谈已创建', icon: 'none' })

@@ -4,6 +4,7 @@ import Taro, { useRouter } from '@tarojs/taro'
 import { customerApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
+import { openCoach } from '@/utils/navigation'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
 import './index.scss'
@@ -33,7 +34,7 @@ export default function CustomerDetail() {
 
   function ask() {
     const text = q.trim() || '关于这位客户，帮我分析一下'
-    Taro.navigateTo({ url: `/pages/chat/index?new=1&customerId=${id}&q=${encodeURIComponent(text)}` })
+    openCoach({ customerId: id, customerName: c?.name || '客户', question: text })
   }
 
   function call() {

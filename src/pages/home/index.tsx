@@ -4,6 +4,8 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { homeApi, type HomeOverview } from '@/utils/api'
 import { getUserInfo, isLoggedIn } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
+import { openCoach, openCustomers } from '@/utils/navigation'
+import { setActiveTab } from '@/utils/ui'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
 import './index.scss'
@@ -38,9 +40,8 @@ export default function Home() {
   const user = getUserInfo()
 
   useDidShow(() => {
-    try {
-      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(2)
-    } catch {}
+    setActiveTab(2)
+    if (isLoggedIn()) load()
   })
 
   useEffect(() => {
@@ -48,7 +49,6 @@ export default function Home() {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
-    load()
   }, [])
 
   async function load() {
@@ -82,7 +82,11 @@ export default function Home() {
   })
 
   function goChat(q?: string) {
-    Taro.navigateTo({ url: `/pages/chat/index?new=1${q ? `&q=${encodeURIComponent(q)}` : ''}` })
+    openCoach(q ? { question: q } : {})
+  }
+
+  function goTasks(filter?: 'pending' | 'risk') {
+    Taro.navigateTo({ url: `/pages/tasks/index${filter ? `?filter=${filter}` : ''}` })
   }
 
   return (
@@ -92,13 +96,13 @@ export default function Home() {
         <View className="hero-top">
           <View className="hero-left">
             <Text className="hero-date">{fmtCnDate()}</Text>
-            <Text className="hero-greet">早上好，{user.name || '伙伴'}</Text>
+            <Text className="hero-greet">早上好，{user?.name || '伙伴'}</Text>
             <View className="hero-tags">
-              <View className="hero-tag tag-ok" onClick={() => Taro.switchTab({ url: '/pages/tasks/index' })}>
+              <View className="hero-tag tag-ok" onClick={() => goTasks('pending')}>
                 <Text className="tag-num">{todayTasks.length}</Text>
                 <Text className="tag-lbl">项跟进</Text>
               </View>
-              <View className="hero-tag tag-risk" onClick={() => Taro.switchTab({ url: '/pages/tasks/index?filter=risk' })}>
+              <View className="hero-tag tag-risk" onClick={() => goTasks('risk')}>
                 <Text className="tag-num">{riskTasks.length}</Text>
                 <Text className="tag-lbl">项风险</Text>
               </View>
@@ -111,7 +115,7 @@ export default function Home() {
       </View>
 
       {/* 搜索 */}
-      <View className="ref-search home-search" onClick={() => Taro.switchTab({ url: '/pages/customers/index' })}>
+      <View className="ref-search home-search" onClick={() => openCustomers()}>
         <View className="ref-search-icon">
           <Icon svg={ICN.search('#9aa2ad')} size={32} />
         </View>
@@ -120,21 +124,21 @@ export default function Home() {
 
       {/* 4 统计卡 */}
       <View className="summary-grid">
-        <View className="sum-card" onClick={() => Taro.navigateTo({ url: '/pages/customers/index?mode=priority' })}>
+        <View className="sum-card" onClick={() => openCustomers('today')}>
           <View className="sum-ico ico-green"><Icon svg={ICN.trophy('#008448')} size={34} /></View>
           <View className="sum-main">
             <Text className="sum-num">{todayCustomers.length} 位</Text>
             <Text className="sum-desc">需要优先处理</Text>
           </View>
         </View>
-        <View className="sum-card" onClick={() => Taro.showToast({ title: '任务页开发中', icon: 'none' })}>
+        <View className="sum-card" onClick={() => goTasks('pending')}>
           <View className="sum-ico ico-yellow"><Icon svg={ICN.clock('#c88400')} size={34} /></View>
           <View className="sum-main">
             <Text className="sum-num">{todayTasks.length} 个</Text>
             <Text className="sum-desc">动作待完成</Text>
           </View>
         </View>
-        <View className="sum-card" onClick={() => Taro.navigateTo({ url: '/pages/customers/index?pool=today' })}>
+        <View className="sum-card" onClick={() => openCustomers('today')}>
           <View className="sum-ico ico-blue"><Icon svg={ICN.home('#335cff')} size={34} /></View>
           <View className="sum-main">
             <Text className="sum-num">{todayCustomers.length} 位</Text>

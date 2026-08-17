@@ -93,6 +93,9 @@ export const meetingApi = {
       method: 'PATCH',
       body: { role },
     }),
+  diagnostics: (id: string) => request<any>(`/api/meetings/${id}/diagnostics`),
+  retryTranscription: (id: string) => request(`/api/meetings/${id}/retry-transcription`, { method: 'POST' }),
+  reanalyze: (id: string) => request(`/api/meetings/${id}/reanalyze`, { method: 'POST' }),
   // 上传录音（multipart）
   uploadAudio: (id: string, filePath: string) =>
     new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {

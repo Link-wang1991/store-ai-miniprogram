@@ -11,6 +11,8 @@ import {
 import { getUserInfo, isLoggedIn } from '@/utils/auth'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
+import { consumeCoachLaunch } from '@/utils/navigation'
+import { setActiveTab, showEditableModal } from '@/utils/ui'
 import './index.scss'
 
 interface Msg {
@@ -140,12 +142,6 @@ function ProposalEditor({
   const [date, setDate] = useState(parts.date)
   const [time, setTime] = useState(parts.time)
   const [error, setError] = useState('')
-
-  useDidShow(() => {
-    try {
-      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(3)
-    } catch {}
-  })
 
   useEffect(() => {
     chatApi.actionProposalAssignees().then((r) => {
@@ -425,6 +421,22 @@ export default function Chat() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const user = getUserInfo()
 
+  useDidShow(() => {
+    setActiveTab(3)
+    const launch = consumeCoachLaunch()
+    if (!launch) {
+      if (isLoggedIn()) loadSessions()
+      return
+    }
+    if (isLoggedIn()) loadSessions()
+    setSessionId(null)
+    setMessages([])
+    setShowCustPicker(false)
+    setCustomerId(launch.customerId || '')
+    setCustomerName(launch.customerName || '')
+    if (launch.question) send(launch.question, { sessionId: null, customerId: launch.customerId || '' })
+  })
+
   useEffect(() => {
     if (!isLoggedIn()) {
       Taro.reLaunch({ url: '/pages/login/index' })
@@ -437,14 +449,16 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function send(text?: string) {
+  async function send(text?: string, context?: { sessionId?: string | null; customerId?: string }) {
     const q = (text ?? input).trim()
     if (!q || sending) return
     setInput('')
     setMessages((prev) => [...prev, { id: nid(), role: 'user', text: q }])
     setSending(true)
     const reqId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-    const r = await chatApi.ask(q, sessionId, customerId || undefined, reqId)
+    const activeSessionId = context?.sessionId ?? sessionId
+    const activeCustomerId = context?.customerId ?? customerId
+    const r = await chatApi.ask(q, activeSessionId, activeCustomerId || undefined, reqId)
     if (r.ok && r.data) {
       const d = r.data
       setSessionId(d.sessionId || null)
@@ -492,9 +506,8 @@ export default function Chat() {
     if (m.feedbackType || !m.messageId) return
     let comment: string | undefined
     if (['仍有顾虑', '信息有误', '需要升级'].includes(label)) {
-      const modal = await Taro.showModal({
+      const modal = await showEditableModal({
         title: `补充「${label}」的原因`,
-        editable: true,
         placeholderText: '可留空',
         confirmColor: '#008448',
       })
@@ -661,7 +674,7 @@ export default function Chat() {
             </Text>
           </View>
           <Text className="ctx-meta">
-            {customerId ? '已关联画像与历史' : '可随时直接提问'} · {user.roleLabel || user.role || '员工'}
+            {customerId ? '已关联画像与历史' : '可随时直接提问'} · {user?.roleLabel || user?.role || '员工'}
           </Text>
           {showCustPicker ? (
             <View className="cust-picker">
@@ -690,6 +703,7 @@ export default function Chat() {
 
       {/* 消息区 */}
       <ScrollView scrollY className="chat-scroll" scrollIntoView={lastMsgId} scrollWithAnimation>
+        <View className="chat-scroll-inner">
         {messages.length === 0 ? (
           mode === 'coach' ? (
           <View className="empty-guide">
@@ -706,7 +720,7 @@ export default function Chat() {
               <View className="guide-item guide-green">
                 <Text className="guide-k">下一步动作</Text>
                 <Text className="guide-v">明确目标后发起跟进</Text>
-                <Text className="guide-v">负责人：{user.roleLabel || user.role || '员工'} · 今日</Text>
+                <Text className="guide-v">负责人：{user?.roleLabel || user?.role || '员工'} · 今日</Text>
               </View>
             </View>
             <View className="guide-risk">
@@ -753,6 +767,7 @@ export default function Chat() {
             </View>
           </View>
         ) : null}
+        </View>
       </ScrollView>
 
       {/* 快捷问题 */}

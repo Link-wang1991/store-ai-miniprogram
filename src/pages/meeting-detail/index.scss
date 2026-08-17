@@ -220,3 +220,32 @@
 
 // 图标行 flex 覆盖
 .next-step { display: flex; align-items: center; gap: 4px; }
+
+.recovery-card {
+  margin-top: 10px;
+  border-left: 3px solid #c88400;
+}
+
+.recovery-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #805600;
+}
+
+.recovery-detail,
+.recovery-code {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: $muted;
+}
+
+.recovery-code { color: #a76400; }
+
+.recovery-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}

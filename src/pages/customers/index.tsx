@@ -4,6 +4,8 @@ import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 import { customerApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
+import { consumeCustomerPool, openCoach } from '@/utils/navigation'
+import { setActiveTab } from '@/utils/ui'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
 import './index.scss'
@@ -48,9 +50,10 @@ export default function Customers() {
   const [q, setQ] = useState('')
 
   useDidShow(() => {
-    try {
-      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(1)
-    } catch {}
+    setActiveTab(1)
+    const nextPool = consumeCustomerPool()
+    if (nextPool) setPool(nextPool)
+    if (isLoggedIn()) load()
   })
 
   useEffect(() => {
@@ -58,7 +61,6 @@ export default function Customers() {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
-    load()
   }, [])
 
   usePullDownRefresh(() => {
@@ -170,8 +172,10 @@ export default function Customers() {
             <Text
               className="ask-link"
               onClick={() =>
-                Taro.navigateTo({
-                  url: `/pages/chat/index?new=1&customerId=${c.id || ''}&q=${encodeURIComponent('关于这位客户，帮我分析一下')}`,
+                openCoach({
+                  customerId: c.id || '',
+                  customerName: c.name || '客户',
+                  question: '关于这位客户，帮我分析一下',
                 })
               }
             >

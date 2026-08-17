@@ -33,7 +33,7 @@ export const TAB_INDEX: Record<string, number> = {
   '/pages/me/index': 4,
 }
 
-export default class CustomTabBar extends Component {
+export default class CustomTabBar extends Component<Record<string, never>, { selected: number }> {
   state = { selected: 0 }
 
   // 组件挂载时同步一次选中态

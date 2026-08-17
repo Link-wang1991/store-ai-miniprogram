@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro, { usePullDownRefresh } from '@tarojs/taro'
+import Taro, { usePullDownRefresh, useRouter } from '@tarojs/taro'
 import { taskApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
@@ -11,6 +11,7 @@ const FILTERS = [
   { key: 'pending', label: '待办' },
   { key: 'doing', label: '进行中' },
   { key: 'completed', label: '已完成' },
+  { key: 'risk', label: '风险' },
 ]
 const STATUS_MAP: Record<string, [string, string]> = {
   pending: ['待办', 'ref-status-gray'],
@@ -23,9 +24,10 @@ function stOf(s?: string) {
 }
 
 export default function Tasks() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [list, setList] = useState<any[]>([])
-  const [filter, setFilter] = useState('')
+  const [filter, setFilter] = useState(router.params.filter || '')
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -42,7 +44,7 @@ export default function Tasks() {
 
   async function load() {
     setLoading(true)
-    const r = await taskApi.list(filter || undefined)
+    const r = await taskApi.list(['pending', 'doing', 'completed'].includes(filter) ? filter : undefined)
     if (r.ok) setList(r.data || [])
     else Taro.showToast({ title: r.error || '加载失败', icon: 'none' })
     setLoading(false)
@@ -56,6 +58,10 @@ export default function Tasks() {
     Taro.showToast({ title: r.ok ? '已标记完成' : r.error || '操作失败', icon: 'none' })
     if (r.ok) load()
   }
+
+  const visibleList = filter === 'risk'
+    ? list.filter((t) => t.priority === 'urgent' || String(t.status || '').includes('risk'))
+    : list
 
   return (
     <View className="page tasks-page">
@@ -73,10 +79,10 @@ export default function Tasks() {
 
       {loading ? (
         <View className="ref-skeleton tasks-skeleton" />
-      ) : list.length === 0 ? (
-        <View className="ref-empty">暂无任务</View>
+      ) : visibleList.length === 0 ? (
+        <View className="ref-empty">{filter === 'risk' ? '暂无风险任务' : '暂无任务'}</View>
       ) : (
-        list.map((t, i) => {
+        visibleList.map((t, i) => {
           const [label, tag] = stOf(t.status)
           return (
             <View className="ref-card task-row" key={t.id || i}>

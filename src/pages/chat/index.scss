@@ -83,9 +83,9 @@
 // 消息区
 .chat-scroll {
   flex: 1;
-  padding: 12px 16px 8px;
   min-height: 0;
 }
+.chat-scroll-inner { padding: 12px 16px 8px; }
 
 .msg-row {
   display: flex;
@@ -328,14 +328,13 @@
 // 快捷问题
 .quick-scroll {
   white-space: nowrap;
-  padding: 4px 0 6px;
   flex-shrink: 0;
 }
 
 .quick-row {
   display: inline-flex;
   gap: 7px;
-  padding: 0 16px;
+  padding: 4px 16px 6px;
 }
 
 .quick-chip {
@@ -670,13 +669,12 @@
 // 会话历史 chips（经典对话，对齐 Web ClassicChatClient）
 .session-scroll {
   white-space: nowrap;
-  padding: 8px 16px 0;
   flex-shrink: 0;
 }
 .session-row {
   display: inline-flex;
   gap: 6px;
-  padding-bottom: 4px;
+  padding: 8px 16px 4px;
 }
 .session-chip {
   display: inline-flex;
@@ -711,13 +709,12 @@
 // 会话历史 chips（经典对话，对齐 Web ClassicChatClient）
 .session-scroll {
   white-space: nowrap;
-  padding: 8px 16px 0;
   flex-shrink: 0;
 }
 .session-row {
   display: inline-flex;
   gap: 6px;
-  padding-bottom: 4px;
+  padding: 8px 16px 4px;
 }
 .session-chip {
   display: inline-flex;

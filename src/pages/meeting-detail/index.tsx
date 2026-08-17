@@ -6,6 +6,7 @@ import { isLoggedIn } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
+import { showEditableModal } from '@/utils/ui'
 import './index.scss'
 
 const CARD_FIELDS = [
@@ -65,7 +66,9 @@ export default function MeetingDetail() {
   const [detail, setDetail] = useState<any>(null)
   const [analysis, setAnalysis] = useState<any>(null)
   const [trans, setTrans] = useState<any[]>([])
+  const [diagnostics, setDiagnostics] = useState<any>(null)
   const [editingId, setEditingId] = useState('')
+  const [recoveryAction, setRecoveryAction] = useState('')
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -77,34 +80,73 @@ export default function MeetingDetail() {
   }, [])
 
   async function load() {
-    const [d, a, t] = await Promise.all([
+    const [d, a, t, diag] = await Promise.all([
       meetingApi.detail(id),
       meetingApi.analysis(id),
       meetingApi.transcripts(id),
+      meetingApi.diagnostics(id),
     ])
     if (d.ok) setDetail(d.data || null)
     if (a.ok) setAnalysis(a.data || null)
     if (t.ok && Array.isArray(t.data)) setTrans(t.data)
+    if (diag.ok) setDiagnostics(diag.data || null)
     if (!d.ok && !a.ok) Taro.showToast({ title: d.error || '加载失败', icon: 'none' })
     setLoading(false)
   }
 
+  async function retryTranscription() {
+    setRecoveryAction('retry')
+    const r = await meetingApi.retryTranscription(id)
+    setRecoveryAction('')
+    Taro.showToast({ title: r.ok ? '已重新提交转写' : r.error || '重新提交失败', icon: 'none' })
+    if (r.ok) load()
+  }
+
+  async function reuploadAudio() {
+    const res = await Taro.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['mp3', 'wav', 'm4a', 'aac', 'amr'],
+    })
+    if (!res.tempFiles?.length) return
+    setRecoveryAction('upload')
+    const r = await meetingApi.uploadAudio(id, res.tempFiles[0].path)
+    setRecoveryAction('')
+    Taro.showToast({ title: r.ok ? '上传成功，开始转写' : r.error || '上传失败', icon: 'none' })
+    if (r.ok) load()
+  }
+
+  async function reanalyze() {
+    const modal = await Taro.showModal({
+      title: '重新分析会谈',
+      content: '将基于当前修订后的逐句转写重新生成报告，不会自动覆盖已有任务。',
+      confirmText: '重新分析',
+      confirmColor: '#008448',
+    })
+    if (!modal.confirm) return
+    setRecoveryAction('analyze')
+    const r = await meetingApi.reanalyze(id)
+    setRecoveryAction('')
+    Taro.showToast({ title: r.ok ? '已重新开始分析' : r.error || '重新分析失败', icon: 'none' })
+    if (r.ok) load()
+  }
+
   // 修订此句（对齐 Web saveTranscript）
   async function reviseTranscript(t: any) {
-    const modal = await Taro.showModal({
+    const modal = await showEditableModal({
       title: '修订此句',
-      editable: true,
       content: t.content || '',
       placeholderText: '输入修正后的内容',
       confirmColor: '#008448',
     })
-    if (!modal.confirm || !modal.content?.trim()) return
+    const corrected = modal.content?.trim()
+    if (!modal.confirm || !corrected) return
     setEditingId(t.id)
-    const r = await meetingApi.updateTranscript(id, t.id, modal.content.trim())
+    const r = await meetingApi.updateTranscript(id, t.id, corrected)
     setEditingId('')
     if (r.ok) {
       setTrans((cur) =>
-        cur.map((x) => (x.id === t.id ? { ...x, content: modal.content.trim(), edited_at: new Date().toISOString() } : x))
+        cur.map((x) => (x.id === t.id ? { ...x, content: corrected, edited_at: new Date().toISOString() } : x))
       )
       Taro.showToast({ title: '已保存修订', icon: 'none' })
     } else {
@@ -151,6 +193,9 @@ export default function MeetingDetail() {
   const nextStep = analysis?.next_step || analysis?.next_action || analysis?.next_plan
   const nextScript = analysis?.next_script || analysis?.followup_script
   const time = detail?.ended_at || detail?.created_at
+  const status = String(detail?.status || diagnostics?.status || '').toLowerCase()
+  const audioStored = diagnostics?.audio_stored === true
+  const needsRecovery = ['failed', 'error', 'recording'].includes(status) || diagnostics?.asr_retry_at
 
   // 说话人分组（对齐 Web speakerGroups）
   const speakerMap = new Map<string, { speaker: string; role: string }>()
@@ -182,6 +227,32 @@ export default function MeetingDetail() {
           <Text className="info-v">{detail?.employeeName || detail?.employee_name || '我'}</Text>
         </View>
       </View>
+
+      {needsRecovery ? (
+        <View className="ref-card recovery-card">
+          <Text className="recovery-title">会谈处理状态</Text>
+          <Text className="recovery-detail">
+            {diagnostics?.next_step || detail?.fail_reason || '正在确认录音与转写处理状态。'}
+          </Text>
+          {diagnostics?.asr_error_code ? <Text className="recovery-code">错误码：{diagnostics.asr_error_code}</Text> : null}
+          <View className="recovery-actions">
+            {!audioStored ? (
+              <View className="ref-btn-sm ref-btn-sm-primary" onClick={reuploadAudio}>
+                {recoveryAction === 'upload' ? '上传中…' : '重新上传录音'}
+              </View>
+            ) : status === 'failed' || status === 'error' ? (
+              <View className="ref-btn-sm ref-btn-sm-primary" onClick={retryTranscription}>
+                {recoveryAction === 'retry' ? '提交中…' : '重新提交转写'}
+              </View>
+            ) : null}
+            {trans.length > 0 && ['failed', 'error'].includes(status) ? (
+              <View className="ref-btn-sm ref-btn-sm-plain" onClick={reanalyze}>
+                {recoveryAction === 'analyze' ? '分析中…' : '重新分析'}
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
 
       {/* 质量评分 */}
       {score != null ? (

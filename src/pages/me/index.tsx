@@ -4,15 +4,15 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { getUserInfo, logout, isLoggedIn, type UserInfo } from '@/utils/auth'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
+import { openCoach } from '@/utils/navigation'
+import { setActiveTab } from '@/utils/ui'
 import './index.scss'
 
 export default function Me() {
   const [user, setUser] = useState<UserInfo | null>(null)
 
   useDidShow(() => {
-    try {
-      Taro.getTabBar(Taro.getCurrentInstance().page)?.setSelected?.(4)
-    } catch {}
+    setActiveTab(4)
   })
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function Me() {
           <View className="quick-ico ico-3"><Icon svg={ICN.check('#008448')} size={36} /></View>
           <Text className="quick-label">我的任务</Text>
         </View>
-        <View className="quick-card" onClick={() => Taro.navigateTo({ url: '/pages/chat/index?new=1' })}>
+        <View className="quick-card" onClick={() => openCoach()}>
           <View className="quick-ico ico-4"><Icon svg={ICN.chat('#008448')} size={36} /></View>
           <Text className="quick-label">提交问题</Text>
         </View>
