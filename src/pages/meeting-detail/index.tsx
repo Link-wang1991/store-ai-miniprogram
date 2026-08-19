@@ -673,7 +673,8 @@ export default function MeetingDetail() {
                     {recoveryAction === 'retry' ? '提交中…' : '重新提交转写'}
                   </View>
                 ) : null}
-                {trans.length > 0 && ['failed', 'error'].includes(status) ? (
+                {/* 语音本身问题（录音无效）时不提供重试：重新分析/重新提交转写都无意义，仅引导重新录音 */}
+                {!isInvalidRecording && trans.length > 0 && ['failed', 'error'].includes(status) ? (
                   <View className="ref-btn-sm ref-btn-sm-plain" onClick={reanalyze}>
                     {recoveryAction === 'analyze' ? '分析中…' : '重新分析'}
                   </View>
