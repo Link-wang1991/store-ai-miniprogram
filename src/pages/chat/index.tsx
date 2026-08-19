@@ -31,14 +31,6 @@ interface Msg {
 }
 
 const ANALYSIS_MARKER = '===ANALYSIS==='
-const QUICK_QUESTIONS = [
-  '如何提高新客到店转化率？',
-  '客户说「太贵了」怎么回应？',
-  '帮我分析今天的待跟进客户',
-  '沉睡客户怎么激活？',
-  '有什么开场白话术推荐？',
-  '帮我复盘一下最近的会谈',
-]
 const ANSWER_TYPE_LABEL: Record<string, string> = {
   knowledge: '门店知识库',
   general: '通用建议',
@@ -436,8 +428,8 @@ function AiBubble({
   )
 }
 
-// ---- 教练工作台（设计图 1：未进入对话时） ----
-function CoachWorkbench({
+// ---- 经典对话工作台（设计图 2：选客户 + 10 场景卡 + 9 块方法论 + 知识 chips + 最近对话） ----
+function ClassicWorkbench({
   customerId,
   customerName,
   onPickCustomer,
@@ -459,8 +451,6 @@ function CoachWorkbench({
   const hasCustomer = !!customerId
   return (
     <View className="coach-wb">
-      <Text className="wb-subtitle">选客户 / 看话术 / 自由问</Text>
-
       {/* 选客户卡：已选定客户时展示客户名，可点击切换 */}
       <View className={`wb-cust-card${hasCustomer ? ' has-customer' : ''}`} onClick={onPickCustomer}>
         <View className="wb-cust-card-left">
@@ -548,17 +538,142 @@ function CoachWorkbench({
   )
 }
 
-// ---- 经典对话空态（设计图 2） ----
-function ClassicEmpty({ onPick, onAsk }: { onPick: (q: string) => void; onAsk: (q: string) => void }) {
+// ---- 教练工作台（设计图 1：通用模式 + 引导卡 + 接下来要问/下一步动作 + 沟通提醒 + 上下文） ----
+function CoachWorkbenchNew({
+  customerId,
+  customerName,
+  showCustPicker,
+  customers,
+  onPickCustomer,
+  onSwitchCustomer,
+  onQuickAsk,
+}: {
+  customerId: string
+  customerName: string
+  showCustPicker: boolean
+  customers: any[]
+  onPickCustomer: () => void
+  onSwitchCustomer: (c: any) => void
+  onQuickAsk: (q: string) => void
+}) {
+  const hasCustomer = !!customerId
+  const directQuote = '描述客户的顾虑、当前进展或你想达成的目标。我会给你可直接使用的话术和下一步动作。'
+
+  function copyText() {
+    Taro.setClipboardData({ data: directQuote })
+    Taro.showToast({ title: '已复制到剪贴板', icon: 'none' })
+  }
+
   return (
-    <View className="classic-empty-2">
-      <View className="ce2-tip">
-        <Text className="ce2-tip-text">
-          这里是<Text className="ce2-bold">自由对话</Text>，想问什么直接说。想要「点一下出结构化结果」？回{' '}
-          <Text className="ce2-bold">AI 教练工作台</Text>
-        </Text>
+    <View className="coach-new-wb">
+      {/* 客户卡：与经典对话一致的样式（统一选客户交互） */}
+      <View className={`wb-cust-card${hasCustomer ? ' has-customer' : ''}`} onClick={onPickCustomer}>
+        <View className="wb-cust-card-left">
+          <Text className="wb-cust-title">
+            {hasCustomer ? `正在针对：${customerName || '客户'}` : '想让回答更准？先选客户'}
+          </Text>
+          <Text className="wb-cust-sub">
+            {hasCustomer
+              ? '已结合这位客户的画像、顾虑和历史，回答会更有针对性'
+              : '选好后 AI 会结合这位客户的画像、顾虑和历史给出建议'}
+          </Text>
+        </View>
+        <View className="wb-cust-pick">
+          {hasCustomer ? '切换' : '选客户'}
+        </View>
       </View>
-      <View className="ce2-spacer" />
+
+      {/* 客户选择列表 */}
+      {showCustPicker ? (
+        <View className="cust-picker cnw-cust-picker">
+          <ScrollView scrollY className="cust-picker-scroll">
+            {customers.length === 0 ? (
+              <Text className="picker-empty">暂无客户</Text>
+            ) : (
+              customers.map((c) => (
+                <View key={c.id} className="picker-item" onClick={() => onSwitchCustomer(c)}>
+                  <Text>{c.name}</Text>
+                  <Text className="picker-sub">尾号 {String(c.phone || '').slice(-4)}</Text>
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      ) : null}
+
+      {/* 快捷入口：可随时直接提问 / 老板 */}
+      <View className="cnw-shortcuts">
+        <View className="cnw-shortcut" onClick={() => onQuickAsk('向我介绍一下这款 AI 教练怎么用？')}>
+          <Icon svg={ICN.chat('#008448')} size={28} />
+          <Text className="cnw-shortcut-text">可随时直接提问</Text>
+        </View>
+        <View className="cnw-shortcut" onClick={() => Taro.showToast({ title: '老板模式建设中', icon: 'none' })}>
+          <Icon svg={ICN.user('#008448')} size={28} />
+          <Text className="cnw-shortcut-text">老板</Text>
+        </View>
+      </View>
+
+      {/* 介绍信息统一卡片（参考经典对话：整块卡片，避免与输入框重叠） */}
+      <View className="ref-card cnw-info-card">
+        {/* 可以直接说：引导卡（含复制） */}
+        <View className="cnw-guide">
+          <View className="cnw-guide-head">
+            <View className="cnw-guide-head-left">
+              <Icon svg={ICN.chat('#008448')} size={28} />
+              <Text className="cnw-guide-title">可以直接说</Text>
+            </View>
+            <View className="cnw-guide-copy" onClick={copyText}>
+              <Icon svg={ICN.copy('#008448')} size={24} />
+              <Text>复制</Text>
+            </View>
+          </View>
+          <Text className="cnw-guide-quote">"{directQuote}"</Text>
+        </View>
+
+        {/* 接下来要问 / 下一步动作：两列卡片 */}
+        <View className="cnw-twocol">
+          <View className="cnw-tc-card cnw-tc-ask">
+            <View className="cnw-tc-head">
+              <Icon svg={ICN.help('#008448')} size={24} />
+              <Text className="cnw-tc-title">接下来要问</Text>
+            </View>
+            <Text className="cnw-tc-li">1. 目前最想解决的具体问题是什么？</Text>
+            <Text className="cnw-tc-li">2. 希望这次对话推动到哪一步？</Text>
+          </View>
+          <View className="cnw-tc-card cnw-tc-action">
+            <View className="cnw-tc-head">
+              <Icon svg={ICN.arrow('#008448')} size={24} />
+              <Text className="cnw-tc-title">下一步动作</Text>
+            </View>
+            <Text className="cnw-tc-text">先补充具体场景或选择一位客户，再生成可执行建议</Text>
+            <Text className="cnw-tc-meta">负责人：当前负责人</Text>
+          </View>
+        </View>
+
+        {/* 沟通提醒：黄色警告块 */}
+        <View className="cnw-warn">
+          <View className="cnw-warn-head">
+            <Icon svg={ICN.warn('#c88400')} size={28} />
+            <Text className="cnw-warn-title">沟通提醒</Text>
+          </View>
+          <Text className="cnw-warn-text">
+            涉及价格、承诺、效果或投诉时，先确认事实与客户感受，再给出下一步方案。
+          </Text>
+        </View>
+
+        {/* 本次教练上下文 */}
+        <View className="cnw-ctx">
+          <View className="cnw-ctx-head">
+            <Icon svg={ICN.info('#008448')} size={24} />
+            <Text className="cnw-ctx-title">本次教练上下文</Text>
+          </View>
+          <Text className="cnw-ctx-text">
+            {hasCustomer
+              ? `当前已关联客户「${customerName || '客户'}」，教练会结合 TA 的画像、顾虑与历史。`
+              : '当前未关联客户：教练只会使用门店知识库和您在对话中提供的事实。'}
+          </Text>
+        </View>
+      </View>
     </View>
   )
 }
@@ -775,10 +890,6 @@ export default function Chat() {
     setMessages([])
   }
 
-  function pickQuick(q: string) {
-    send(q)
-  }
-
   const lastMsgId = messages.length ? `msg-${messages[messages.length - 1].id}` : ''
   const isHome = mode === 'coach' && messages.length === 0
   const isClassicEmpty = mode === 'classic' && messages.length === 0
@@ -801,9 +912,19 @@ export default function Chat() {
         </View>
       </View>
 
-      {/* 教练工作台空态：设计图 1 */}
+      {/* 教练工作台空态：设计图 1（新教练工作台） */}
       {isHome ? (
-        <CoachWorkbench
+        <CoachWorkbenchNew
+          customerId={customerId}
+          customerName={customerName}
+          showCustPicker={showCustPicker}
+          customers={customers}
+          onPickCustomer={openCustomerPicker}
+          onSwitchCustomer={switchCustomer}
+          onQuickAsk={(q) => send(q)}
+        />
+      ) : isClassicEmpty ? (
+        <ClassicWorkbench
           customerId={customerId}
           customerName={customerName}
           onPickCustomer={openCustomerPicker}
@@ -813,43 +934,6 @@ export default function Chat() {
           onOpenSession={(s) => (s.id ? openSession(s) : newSession())}
           recentSessions={sessions}
         />
-      ) : isClassicEmpty ? (
-        <ScrollView
-          scrollY
-          className="chat-scroll"
-          scrollIntoView={lastMsgId}
-          scrollWithAnimation
-        >
-          <View className="chat-scroll-inner">
-            {/* 经典对话：新对话 + 会话历史 */}
-            <ScrollView scrollX className="session-scroll" showScrollbar={false}>
-              <View className="session-row">
-                <View className={`session-chip new-conversation${!sessionId ? ' active' : ''}`} onClick={newSession}>
-                  新对话
-                </View>
-                {sessions.map((s) => (
-                  <View
-                    key={s.id}
-                    className={`session-chip${sessionId === s.id ? ' active' : ''}`}
-                    onClick={() => openSession(s)}
-                  >
-                    <Text className="session-chip-text">{s.title || '历史对话'}</Text>
-                    <Text
-                      className="session-del"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteSession(s)
-                      }}
-                    >
-                      ×
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-            <ClassicEmpty onAsk={pickQuick} onPick={pickQuick} />
-          </View>
-        </ScrollView>
       ) : (
         <ScrollView scrollY className="chat-scroll" scrollIntoView={lastMsgId} scrollWithAnimation>
           <View className="chat-scroll-inner">
@@ -953,24 +1037,17 @@ export default function Chat() {
         </ScrollView>
       )}
 
-      {/* 快捷问题：仅在两个空态之外的输入区展示（设计图 2 在空态底部也有建议 chip） */}
-      {isClassicEmpty ? (
-        <View className="ce2-suggest">
-          {QUICK_QUESTIONS.slice(0, 2).map((q) => (
-            <View key={q} className="ce2-suggest-chip" onClick={() => pickQuick(q)}>
-              {q}
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      {/* 输入区：所有模式共用 */}
+      {/* 输入区：所有模式共用（教练工作台/经典对话共用，placeholder 区分模式） */}
       <View className="chat-input-bar">
         <Textarea
           className="chat-input"
           value={input}
           onInput={(e) => setInput(e.detail.value)}
-          placeholder={mode === 'classic' ? '向 AI 教练提问' : '想点什么场景或直接描述客户顾虑…'}
+          placeholder={
+            mode === 'classic'
+              ? '也可以直接问一句，比如「客户说回去和老公商量」'
+              : '向教练提问…'
+          }
           placeholderClass="ref-field-placeholder"
           autoHeight
           maxlength={2000}

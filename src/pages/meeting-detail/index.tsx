@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { View, Text, Textarea } from '@tarojs/components'
+import { View, Text, Textarea, Input, Picker } from '@tarojs/components'
 import Taro, { useRouter, usePullDownRefresh } from '@tarojs/taro'
 import { meetingApi, customerApi, experienceReviewApi } from '@/utils/api'
 import { getToken, getUserInfo, isLoggedIn } from '@/utils/auth'
-import { fmtDate } from '@/utils/format'
+import { fmtDate, ageFromBirthday, birthdayFromAge } from '@/utils/format'
 import { sceneLabel } from '@/utils/scenes'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
-import { showEditableModal } from '@/utils/ui'
 import './index.scss'
 
 // 字段 key 对齐后端 meeting_analysis 表列名（V5 迁移后的真实列）
@@ -101,6 +100,21 @@ function fmtSize(bytes?: number) {
     return `${bytes}B`
 }
 
+const CUST_GENDERS = ['女', '男']
+const CUST_STAGES = [
+  { key: 'new', label: '新客' },
+  { key: 'intent', label: '意向' },
+  { key: 'deal', label: '已成交' },
+  { key: 'regular', label: '老客' },
+  { key: 'churn_risk', label: '流失风险' },
+]
+const CUST_STAGE_LABEL: Record<string, string> = Object.fromEntries(CUST_STAGES.map((s) => [s.key, s.label]))
+
+// 占位客户：名字以"新客户"开头（与后端 MeetingController 判定一致）
+function isPlaceholderName(name?: string) {
+  return !name || String(name).startsWith('新客户')
+}
+
 // 解析 report JSON（字符串或对象），展开合并进 analysis
 function expandAnalysis(raw: any): any {
   if (!raw || typeof raw !== 'object') return raw
@@ -127,6 +141,10 @@ export default function MeetingDetail() {
   const [trans, setTrans] = useState<any[]>([])
   const [diagnostics, setDiagnostics] = useState<any>(null)
   const [tab, setTab] = useState<'overview' | 'deep' | 'distill' | 'transcript'>('overview')
+  // 客户资料内联编辑（参照客户页）
+  const [custEditOpen, setCustEditOpen] = useState(false)
+  const [custForm, setCustForm] = useState({ name: '', phone: '', gender: '', age: '', birthday: '', stage: '' })
+  const [custSaving, setCustSaving] = useState(false)
   const [editingId, setEditingId] = useState('')
   const [recoveryAction, setRecoveryAction] = useState('')
   const [distilling, setDistilling] = useState('')
@@ -364,45 +382,105 @@ export default function MeetingDetail() {
     }
   }
 
-  // 编辑客户 / 绑定已有客户（对齐 Web 端能力）
+  // 编辑客户资料：展开内联面板并加载客户档案回填（参照客户页）
   async function editCustomer() {
-    const customerList = await customerApi.list()
-    const customers = customerList.ok ? (customerList.data || []) : []
-    const options = customers.map((c: any) => `${c.name}${c.phone ? `（尾号${String(c.phone).slice(-4)}）` : ''}`)
-    // 新客户（无绑定）时才显示"绑定已有客户"；有客户时也可改名
-    const isPlaceholder = String(detail?.customer_name || '').startsWith('新客户')
-    const actions: string[] = []
-    if (isPlaceholder && options.length > 0) actions.push('绑定已有客户')
-    actions.push('修改客户姓名')
-    if (actions.length === 0) {
-      Taro.showToast({ title: '当前客户已绑定，无需编辑', icon: 'none' })
+    if (custEditOpen) {
+      setCustEditOpen(false)
       return
     }
-    const pick = await Taro.showActionSheet({ itemList: actions, itemColor: '#008448' })
-    if (pick.errMsg && !pick.errMsg.includes('ok')) return
-    const chosen = actions[pick.tapIndex]
+    const cid = detail?.customer_id || detail?.customerId
+    if (!cid) {
+      Taro.showToast({ title: '暂无可编辑的客户档案', icon: 'none' })
+      return
+    }
+    const r = await customerApi.detail(cid)
+    const c = r.ok ? (r.data || {}) : {}
+    const birthday = c.birthday || c.birth_date || ''
+    setCustForm({
+      name: c.name || detail?.customerName || detail?.customer_name || '',
+      phone: c.phone || '',
+      gender: c.gender === 'female' ? '女' : c.gender === 'male' ? '男' : '',
+      age: c.age ? String(c.age) : '',
+      birthday: birthday ? String(birthday).slice(0, 10) : '',
+      stage: c.stage || '',
+    })
+    setCustEditOpen(true)
+  }
 
-    if (chosen === '绑定已有客户') {
-      const sel = await Taro.showActionSheet({ itemList: options.slice(0, 6), itemColor: '#008448' })
-      if (sel.errMsg && !sel.errMsg.includes('ok')) return
-      const target = customers[sel.tapIndex]
-      if (!target) return
-      const r = await meetingApi.update(id, { customer_id: target.id })
-      Taro.showToast({ title: r.ok ? '已绑定客户' : r.error || '绑定失败', icon: 'none' })
-      if (r.ok) load()
+  // 保存客户档案资料（改客户档案，改名时后端自动同步会谈 customer_name）
+  async function saveMeetingCustomer() {
+    const name = custForm.name.trim()
+    if (!name) {
+      Taro.showToast({ title: '姓名不能为空', icon: 'none' })
+      return
+    }
+    if (custForm.phone && !/^1\d{10}$/.test(custForm.phone)) {
+      Taro.showToast({ title: '手机号格式不正确', icon: 'none' })
+      return
+    }
+    const cid = detail?.customer_id || detail?.customerId
+    if (!cid) return
+    setCustSaving(true)
+    const payload: any = {
+      name,
+      phone: custForm.phone || null,
+      gender: custForm.gender === '男' ? 'male' : custForm.gender === '女' ? 'female' : null,
+      age: custForm.age ? Number(custForm.age) : null,
+      birthday: custForm.birthday || null,
+      stage: custForm.stage || null,
+    }
+    const ur = await customerApi.update(cid, payload)
+    setCustSaving(false)
+    if (ur.ok) {
+      Taro.showToast({ title: '已保存', icon: 'none' })
+      setCustEditOpen(false)
+      load()
     } else {
-      const res = await showEditableModal({
-        title: '修改客户姓名',
-        content: detail?.customer_name || '',
-        placeholderText: '输入客户姓名',
-        confirmColor: '#008448',
-      })
-      if (!res.confirm) return
-      const name = res.content?.trim()
-      if (!name) return
-      const r = await meetingApi.update(id, { customer_name: name })
-      Taro.showToast({ title: r.ok ? '已更新客户' : r.error || '更新失败', icon: 'none' })
-      if (r.ok) load()
+      Taro.showToast({ title: ur.error || '保存失败', icon: 'none' })
+    }
+  }
+
+  // 绑定已有客户：与客户页绑定同一逻辑 —— 把占位"新客户"档案合并进选中的正式客户，
+  // 迁移其全部业务数据（会谈/任务/记忆/互动时间线），再删除占位档案本身。
+  async function bindMeetingCustomer() {
+    const sourceId = detail?.customer_id || detail?.customerId
+    if (!sourceId) {
+      Taro.showToast({ title: '暂无可绑定的客户档案', icon: 'none' })
+      return
+    }
+    const r = await customerApi.list()
+    const all = r.ok ? (r.data || []) : []
+    // 绑定目标必须是正式客户：有有效手机号，且排除占位客户（"新客户"前缀）
+    const targets = all.filter(
+      (x: any) =>
+        x.id !== sourceId &&
+        x.phone &&
+        /^1\d{10}$/.test(String(x.phone)) &&
+        !String(x.name || '').startsWith('新客户')
+    )
+    if (targets.length === 0) {
+      Taro.showToast({ title: '暂无可绑定的正式客户', icon: 'none' })
+      return
+    }
+    const options = targets.map((x: any) => `${x.name}${x.phone ? `（尾号${String(x.phone).slice(-4)}）` : ''}`)
+    const sel = await Taro.showActionSheet({ itemList: options.slice(0, 6), itemColor: '#008448' })
+    if (sel.errMsg && !sel.errMsg.includes('ok')) return
+    const target = targets[sel.tapIndex]
+    if (!target) return
+    const confirm = await Taro.showModal({
+      title: '绑定到正式客户',
+      content: `将把当前客户「${detail?.customerName || detail?.customer_name || '新客户'}」的会谈、任务、记忆和时间线并入「${target.name}」，并删除该占位档案。此操作不可撤销。`,
+      confirmText: '确认绑定',
+      confirmColor: '#d94b3d',
+    })
+    if (!confirm.confirm) return
+    Taro.showLoading({ title: '绑定中…' })
+    const mr = await customerApi.merge(target.id, sourceId)
+    Taro.hideLoading()
+    Taro.showToast({ title: mr.ok ? `已绑定到「${target.name}」` : mr.error || '绑定失败', icon: 'none' })
+    if (mr.ok) {
+      setCustEditOpen(false)
+      load()
     }
   }
 
@@ -675,6 +753,109 @@ export default function MeetingDetail() {
               <Text className="info-v">{detail?.employeeName || detail?.employee_name || '我'}</Text>
             </View>
           </View>
+
+          {/* 内联编辑客户资料（参照客户页） */}
+          {custEditOpen ? (
+            <View className="ref-card detail-cust-edit">
+              <Text className="dc-title">编辑客户资料</Text>
+              {isPlaceholderName(detail?.customerName || detail?.customer_name) ? (
+                <Text className="dc-bind" onClick={bindMeetingCustomer}>绑定已有客户 →</Text>
+              ) : null}
+              <View className="dc-field">
+                <Text className="dc-k">姓名</Text>
+                <Input
+                  className="dc-input"
+                  value={custForm.name}
+                  onInput={(e) => setCustForm({ ...custForm, name: e.detail.value })}
+                  placeholder="客户姓名"
+                  placeholderClass="ref-field-placeholder"
+                  maxlength={20}
+                />
+              </View>
+              <View className="dc-field">
+                <Text className="dc-k">手机号</Text>
+                <Input
+                  className="dc-input"
+                  value={custForm.phone}
+                  onInput={(e) => setCustForm({ ...custForm, phone: e.detail.value })}
+                  placeholder="11 位手机号"
+                  placeholderClass="ref-field-placeholder"
+                  type="number"
+                  maxlength={11}
+                />
+              </View>
+              <View className="dc-field">
+                <Text className="dc-k">性别</Text>
+                <Picker
+                  mode="selector"
+                  range={CUST_GENDERS}
+                  value={CUST_GENDERS.indexOf(custForm.gender) < 0 ? -1 : CUST_GENDERS.indexOf(custForm.gender)}
+                  onChange={(e) => setCustForm({ ...custForm, gender: CUST_GENDERS[Number(e.detail.value)] || '' })}
+                >
+                  <View className="dc-input dc-picker">{custForm.gender || '选择性别'}</View>
+                </Picker>
+              </View>
+              <View className="dc-field">
+                <Text className="dc-k">生日</Text>
+                <Picker
+                  mode="date"
+                  start="1900-01-01"
+                  end={new Date().toISOString().slice(0, 10)}
+                  value={custForm.birthday || '2000-01-01'}
+                  onChange={(e) => {
+                    const bd = e.detail.value
+                    setCustForm((f) => ({ ...f, birthday: bd, age: ageFromBirthday(bd) || f.age }))
+                  }}
+                >
+                  <View className="dc-input dc-picker">{custForm.birthday || '选择生日'}</View>
+                </Picker>
+              </View>
+              <View className="dc-field">
+                <Text className="dc-k">年龄</Text>
+                <Input
+                  className="dc-input"
+                  value={custForm.age}
+                  onInput={(e) => setCustForm({ ...custForm, age: e.detail.value.replace(/\D/g, '') })}
+                  onBlur={() => {
+                    // 输入年龄后自动补生日（仅定年份，月日取 1 月 1 日，可再细化）
+                    if (custForm.age && !custForm.birthday) {
+                      setCustForm((f) => ({ ...f, birthday: birthdayFromAge(f.age) }))
+                    }
+                  }}
+                  placeholder="如 35"
+                  placeholderClass="ref-field-placeholder"
+                  type="number"
+                  maxlength={3}
+                />
+              </View>
+              <View className="dc-field">
+                <Text className="dc-k">客户阶段</Text>
+                <Picker
+                  mode="selector"
+                  range={CUST_STAGES.map((s) => s.label)}
+                  value={CUST_STAGES.findIndex((s) => s.key === custForm.stage)}
+                  onChange={(e) =>
+                    setCustForm({ ...custForm, stage: CUST_STAGES[Number(e.detail.value)]?.key || '' })
+                  }
+                >
+                  <View className="dc-input dc-picker">
+                    {CUST_STAGE_LABEL[custForm.stage] || '选择客户阶段'}
+                  </View>
+                </Picker>
+              </View>
+              <View className="dc-actions">
+                <View className="ref-btn-sm ref-btn-sm-plain" onClick={() => setCustEditOpen(false)}>
+                  取消
+                </View>
+                <View
+                  className={`ref-btn-sm ref-btn-sm-primary${custSaving ? ' disabled' : ''}`}
+                  onClick={saveMeetingCustomer}
+                >
+                  {custSaving ? '保存中…' : '保存'}
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           {/* 录音与处理诊断（设计图） */}
           <View className="ref-card diag-card">

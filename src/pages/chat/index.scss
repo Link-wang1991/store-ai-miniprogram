@@ -1067,3 +1067,229 @@
   background: $surface-2;
   color: $muted;
 }
+
+// ================= 教练工作台（设计图 1 新版） =================
+.coach-new-wb {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 16px calc(16px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+// 介绍信息统一卡片（参考经典对话整块卡片，内部用分隔线/间距，避免和输入框重叠）
+.cnw-info-card {
+  margin-top: 10px;
+  padding: 16px;
+}
+.cnw-info-card .cnw-guide,
+.cnw-info-card .cnw-twocol,
+.cnw-info-card .cnw-warn,
+.cnw-info-card .cnw-ctx {
+  margin-top: 0;
+}
+.cnw-info-card .cnw-guide {
+  padding-bottom: 14px;
+  border-bottom: 1px solid $line;
+}
+.cnw-info-card .cnw-twocol {
+  margin-top: 14px;
+}
+.cnw-info-card .cnw-warn {
+  margin-top: 14px;
+}
+.cnw-info-card .cnw-ctx {
+  margin-top: 14px;
+}
+
+// 客户卡
+.cnw-cust {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 14px;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 14px;
+  margin-top: 12px;
+}
+.cnw-cust-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.cnw-mode-tag {
+  align-self: flex-start;
+  font-size: 13px;
+  padding: 3px 12px;
+  border-radius: 6px;
+  background: $surface-2;
+  color: $muted;
+  font-weight: 600;
+}
+.cnw-mode-tag.has-customer {
+  background: #eaf6ef;
+  color: $green-dark;
+}
+.cnw-cust-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: $ink;
+}
+.cnw-cust-pick {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: $green-dark;
+  background: $paper;
+  border: 1px solid $green-dark;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+// 快捷入口（可随时直接提问 / 老板）：两列
+.cnw-shortcuts {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.cnw-shortcut {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 12px;
+}
+.cnw-shortcut-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+// 可以直接说：引导块（已并入 cnw-info-card，去掉外层卡片边框）
+.cnw-guide {
+  padding: 0 0 14px;
+  border-bottom: 1px solid $line;
+}
+.cnw-guide-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cnw-guide-head-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cnw-guide-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $green-dark;
+}
+.cnw-guide-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: $green-dark;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.cnw-guide-quote {
+  font-size: 13px;
+  line-height: 1.7;
+  color: $ink;
+  font-style: italic;
+}
+
+// 接下来要问 / 下一步动作：两列（并入 cnw-info-card，用浅灰底区分）
+.cnw-twocol {
+  display: flex;
+  gap: 10px;
+}
+.cnw-tc-card {
+  flex: 1;
+  padding: 14px;
+  background: $surface-2;
+  border-radius: 12px;
+}
+.cnw-tc-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.cnw-tc-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $green-dark;
+}
+.cnw-tc-li {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.7;
+}
+.cnw-tc-text {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.7;
+  margin-bottom: 6px;
+}
+.cnw-tc-meta {
+  display: block;
+  font-size: 12px;
+  color: $muted;
+}
+
+// 沟通提醒：黄色警告卡
+.cnw-warn {
+  margin-top: 10px;
+  padding: 14px;
+  background: #fff8ec;
+  border: 1px solid #f2ddb4;
+  border-radius: 14px;
+}
+.cnw-warn-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.cnw-warn-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #a76400;
+}
+.cnw-warn-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #7a5a1a;
+}
+
+// 本次教练上下文（并入 cnw-info-card，去掉外层卡片边框）
+.cnw-ctx {
+  padding: 0;
+}
+.cnw-ctx-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.cnw-ctx-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $green-dark;
+}
+.cnw-ctx-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: $ink;
+}

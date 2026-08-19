@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { View, Text, Input, ScrollView } from '@tarojs/components'
+import { View, Text, Input, ScrollView, Picker } from '@tarojs/components'
 import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 import { meetingApi, customerApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
-import { fmtDate } from '@/utils/format'
+import { fmtDate, ageFromBirthday, birthdayFromAge } from '@/utils/format'
 import { sceneLabel, MEETING_SCENES } from '@/utils/scenes'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
@@ -12,6 +12,20 @@ import './index.scss'
 
 // 场景兜底：{code, label}，后端 /api/meetings/scenes 返回的是对象数组（含 code/display_name/sort_order）
 const SCENE_FALLBACK = MEETING_SCENES.map(([code, label]) => ({ code, label }))
+
+// 场景归属：new=新客户场景，existing=老客户场景，both=通用（新老客户都显示）
+const SCENE_TYPE: Record<string, 'new' | 'existing' | 'both'> = {
+  new_consult: 'new',
+  effect_doubt: 'new',
+  project_intro: 'both',
+  deal_consult: 'both',
+  pre_service: 'both',
+  price_objection: 'both',
+  complaint: 'both',
+  post_service: 'existing',
+  repurchase: 'existing',
+  campaign_invite: 'existing',
+}
 
 function statusOf(m: any): { label: string; tag: string; color: string } {
   const s = String(m.status || '').toLowerCase()
@@ -31,6 +45,30 @@ function pad(n: number) {
   return String(n).padStart(2, '0')
 }
 
+// 把会谈时长（秒）格式化为可读文本，避免显示裸数字
+function fmtDuration(sec?: number) {
+  if (!sec && sec !== 0) return ''
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return m > 0 ? `${m}分${s}秒` : `${s}秒`
+}
+
+const CUST_GENDERS = ['女', '男']
+const CUST_STAGES = [
+  { key: 'new', label: '新客' },
+  { key: 'intent', label: '意向' },
+  { key: 'deal', label: '已成交' },
+  { key: 'regular', label: '老客' },
+  { key: 'churn_risk', label: '流失风险' },
+]
+const CUST_STAGE_LABEL: Record<string, string> = Object.fromEntries(CUST_STAGES.map((s) => [s.key, s.label]))
+
+// 占位客户：无有效手机号（与客户页 isPlaceholder 一致）。列表侧用"新客户"前缀快速判断，
+// 与后端 MeetingController 判定占位客户（name.startsWith("新客户")）一致。
+function isPlaceholderName(name?: string) {
+  return !name || String(name).startsWith('新客户')
+}
+
 export default function Meeting() {
   const [loading, setLoading] = useState(true)
   const [list, setList] = useState<any[]>([])
@@ -44,6 +82,10 @@ export default function Meeting() {
   const [scene, setScene] = useState('')
   const [consent, setConsent] = useState(false)
   const [showCustPicker, setShowCustPicker] = useState(false)
+  // 会谈卡片内联编辑客户资料（参照客户页）：editingId 非空时展开对应会谈卡片的编辑面板
+  const [editingId, setEditingId] = useState('')
+  const [custForm, setCustForm] = useState({ name: '', phone: '', gender: '', age: '', birthday: '', stage: '' })
+  const [custSaving, setCustSaving] = useState(false)
   // 同名客户识别（到店客户消歧）
   const [identifyKw, setIdentifyKw] = useState('')
   const [identifyList, setIdentifyList] = useState<any[]>([])
@@ -324,6 +366,22 @@ export default function Meeting() {
     setShowCustPicker(false)
   }
 
+  // 按客户类型（新/老）筛选会谈场景
+  const visibleScenes = scenes.filter((s) => {
+    const t = SCENE_TYPE[s.code] || 'both'
+    return t === 'both' || t === custType
+  })
+
+  // 切换新老客户：场景列表随之切换，并自动选中该类第一个场景
+  function switchCustType(t: 'new' | 'existing') {
+    setCustType(t)
+    const next = scenes.filter((s) => {
+      const st = SCENE_TYPE[s.code] || 'both'
+      return st === 'both' || st === t
+    })
+    if (next.length > 0) setScene(next[0].code)
+  }
+
   // 到店识别：按手机号/姓名查找客户，展示负责人/到店/最近会谈等消歧信息
   async function doIdentify() {
     const kw = identifyKw.trim()
@@ -350,6 +408,109 @@ export default function Meeting() {
     if (r.ok) load()
   }
 
+  // 会谈卡片：编辑客户资料（展开内联面板，参照客户页）。先加载客户档案回填表单。
+  async function editMeetingCustomer(m: any) {
+    if (editingId === m.id) {
+      setEditingId('')
+      return
+    }
+    const cid = m.customer_id || m.customerId
+    if (!cid) {
+      Taro.showToast({ title: '暂无可编辑的客户档案', icon: 'none' })
+      return
+    }
+    const r = await customerApi.detail(cid)
+    const c = r.ok ? (r.data || {}) : {}
+    const birthday = c.birthday || c.birth_date || ''
+    setCustForm({
+      name: c.name || m.customerName || m.customer_name || '',
+      phone: c.phone || '',
+      gender: c.gender === 'female' ? '女' : c.gender === 'male' ? '男' : '',
+      age: c.age ? String(c.age) : '',
+      birthday: birthday ? String(birthday).slice(0, 10) : '',
+      stage: c.stage || '',
+    })
+    setEditingId(m.id)
+  }
+
+  // 保存会谈关联客户的资料（改客户档案，改名时后端自动同步会谈 customer_name）
+  async function saveMeetingCustomer(m: any) {
+    const name = custForm.name.trim()
+    if (!name) {
+      Taro.showToast({ title: '姓名不能为空', icon: 'none' })
+      return
+    }
+    if (custForm.phone && !/^1\d{10}$/.test(custForm.phone)) {
+      Taro.showToast({ title: '手机号格式不正确', icon: 'none' })
+      return
+    }
+    const cid = m.customer_id || m.customerId
+    if (!cid) return
+    setCustSaving(true)
+    const payload: any = {
+      name,
+      phone: custForm.phone || null,
+      gender: custForm.gender === '男' ? 'male' : custForm.gender === '女' ? 'female' : null,
+      age: custForm.age ? Number(custForm.age) : null,
+      birthday: custForm.birthday || null,
+      stage: custForm.stage || null,
+    }
+    const ur = await customerApi.update(cid, payload)
+    setCustSaving(false)
+    if (ur.ok) {
+      Taro.showToast({ title: '已保存', icon: 'none' })
+      setEditingId('')
+      load()
+    } else {
+      Taro.showToast({ title: ur.error || '保存失败', icon: 'none' })
+    }
+  }
+
+  // 绑定已有客户：与客户页绑定同一逻辑 —— 把占位"新客户"档案合并进选中的正式客户，
+  // 迁移其全部业务数据（会谈/任务/记忆/互动时间线）到正式客户，再删除占位档案本身。
+  // 当前会谈（customer_id = 占位客户）也会自动跟随迁移到正式客户，不会丢失。
+  async function bindMeetingCustomer(m: any) {
+    const sourceId = m.customer_id || m.customerId
+    if (!sourceId) {
+      Taro.showToast({ title: '暂无可绑定的客户档案', icon: 'none' })
+      return
+    }
+    const r = await customerApi.list()
+    const all = r.ok ? (r.data || []) : []
+    // 绑定目标必须是正式客户：有有效手机号，且排除占位客户（"新客户"前缀）
+    const targets = all.filter(
+      (x: any) =>
+        x.id !== sourceId &&
+        x.phone &&
+        /^1\d{10}$/.test(String(x.phone)) &&
+        !String(x.name || '').startsWith('新客户')
+    )
+    if (targets.length === 0) {
+      Taro.showToast({ title: '暂无可绑定的正式客户', icon: 'none' })
+      return
+    }
+    const options = targets.map((x: any) => `${x.name}${x.phone ? `（尾号${String(x.phone).slice(-4)}）` : ''}`)
+    const sel = await Taro.showActionSheet({ itemList: options.slice(0, 6), itemColor: '#008448' })
+    if (sel.errMsg && !sel.errMsg.includes('ok')) return
+    const target = targets[sel.tapIndex]
+    if (!target) return
+    const confirm = await Taro.showModal({
+      title: '绑定到正式客户',
+      content: `将把当前客户「${m.customerName || m.customer_name || '新客户'}」的会谈、任务、记忆和时间线并入「${target.name}」，并删除该占位档案。此操作不可撤销。`,
+      confirmText: '确认绑定',
+      confirmColor: '#d94b3d',
+    })
+    if (!confirm.confirm) return
+    Taro.showLoading({ title: '绑定中…' })
+    const mr = await customerApi.merge(target.id, sourceId)
+    Taro.hideLoading()
+    Taro.showToast({ title: mr.ok ? `已绑定到「${target.name}」` : mr.error || '绑定失败', icon: 'none' })
+    if (mr.ok) {
+      setEditingId('')
+      load()
+    }
+  }
+
   return (
     <View className="page meeting-page">
       {/* 快速会谈设置卡 */}
@@ -357,10 +518,10 @@ export default function Meeting() {
         <Text className="rec-title">快速会谈</Text>
 
         <View className="cust-type-row">
-          <View className={`type-btn${custType === 'new' ? ' active' : ''}`} onClick={() => setCustType('new')}>
+          <View className={`type-btn${custType === 'new' ? ' active' : ''}`} onClick={() => switchCustType('new')}>
             新客户
           </View>
-          <View className={`type-btn${custType === 'existing' ? ' active' : ''}`} onClick={() => setCustType('existing')}>
+          <View className={`type-btn${custType === 'existing' ? ' active' : ''}`} onClick={() => switchCustType('existing')}>
             已有客户
           </View>
         </View>
@@ -433,12 +594,12 @@ export default function Meeting() {
           </View>
         ) : null}
 
-        <View className="scene-label">会谈场景</View>
+        <View className="scene-label">会谈场景{custType === 'existing' ? '（老客）' : '（新客）'}</View>
         <View className="scene-chips">
-          {scenes.map((s) => (
+          {visibleScenes.map((s) => (
             <View
               key={s.code}
-              className={`scene-chip${(scene || scenes[0].code) === s.code ? ' active' : ''}`}
+              className={`scene-chip${(scene || visibleScenes[0].code) === s.code ? ' active' : ''}`}
               onClick={() => setScene(s.code)}
             >
               {s.label}
@@ -500,34 +661,149 @@ export default function Meeting() {
               <View className="meet-head">
                 <View className="meet-dot" style={{ backgroundColor: st.color }} />
                 <Text className="meet-customer">{m.customerName || m.customer_name || '客户会谈'}</Text>
+                {m.scene ? <Text className="meet-scene">{sceneLabel(m.scene)}</Text> : null}
                 <Text className={`ref-status ${st.tag}`}>{st.label}</Text>
               </View>
               <View className="meet-meta">
-                {m.scene ? <Text className="meet-scene">{sceneLabel(m.scene)}</Text> : null}
-                {m.quality_score != null ? <Text className="meet-score">{m.quality_score} 分</Text> : null}
-                <Text className="meet-time">{m.ended_at || m.duration || ''}</Text>
+                {m.qualityScore != null || m.quality_score != null ? (
+                  <Text className="meet-score">{m.qualityScore ?? m.quality_score} 分</Text>
+                ) : null}
+                {m.qualityScore != null || m.quality_score != null ? (
+                  <Text className="meet-meta-sep">·</Text>
+                ) : null}
+                <Text className="meet-time">{fmtDuration(m.duration)}</Text>
+                <View className="meet-ops">
+                  {isPlaceholderName(m.customerName || m.customer_name) ? (
+                    <Text
+                      className="meet-op"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        bindMeetingCustomer(m)
+                      }}
+                    >
+                      绑定客户
+                    </Text>
+                  ) : null}
+                  <Text
+                    className="meet-op"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      editMeetingCustomer(m)
+                    }}
+                  >
+                    编辑
+                  </Text>
+                  <Text
+                    className="meet-del"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      delMeeting(m)
+                    }}
+                  >
+                    删除
+                  </Text>
+                </View>
               </View>
-              {['analyzing', 'transcribing', 'processing', 'submitting'].includes(
-                String(m.status || '').toLowerCase()
-              ) ? (
-                <View className="progress-track">
-                  <View className="progress-bar" />
+
+              {/* 内联编辑客户资料（参照客户页） */}
+              {editingId === m.id ? (
+                <View className="meet-cust-edit" onClick={(e) => e.stopPropagation()}>
+                  <Text className="ce-title">编辑客户资料</Text>
+                  <View className="ce-field">
+                    <Text className="ce-k">姓名</Text>
+                    <Input
+                      className="ce-input"
+                      value={custForm.name}
+                      onInput={(e) => setCustForm({ ...custForm, name: e.detail.value })}
+                      placeholder="客户姓名"
+                      placeholderClass="ref-field-placeholder"
+                      maxlength={20}
+                    />
+                  </View>
+                  <View className="ce-field">
+                    <Text className="ce-k">手机号</Text>
+                    <Input
+                      className="ce-input"
+                      value={custForm.phone}
+                      onInput={(e) => setCustForm({ ...custForm, phone: e.detail.value })}
+                      placeholder="11 位手机号"
+                      placeholderClass="ref-field-placeholder"
+                      type="number"
+                      maxlength={11}
+                    />
+                  </View>
+                  <View className="ce-field">
+                    <Text className="ce-k">性别</Text>
+                    <Picker
+                      mode="selector"
+                      range={CUST_GENDERS}
+                      value={CUST_GENDERS.indexOf(custForm.gender) < 0 ? -1 : CUST_GENDERS.indexOf(custForm.gender)}
+                      onChange={(e) => setCustForm({ ...custForm, gender: CUST_GENDERS[Number(e.detail.value)] || '' })}
+                    >
+                      <View className="ce-input ce-picker">{custForm.gender || '选择性别'}</View>
+                    </Picker>
+                  </View>
+                  <View className="ce-field">
+                    <Text className="ce-k">生日</Text>
+                    <Picker
+                      mode="date"
+                      start="1900-01-01"
+                      end={new Date().toISOString().slice(0, 10)}
+                      value={custForm.birthday || '2000-01-01'}
+                      onChange={(e) => {
+                        const bd = e.detail.value
+                        setCustForm((f) => ({ ...f, birthday: bd, age: ageFromBirthday(bd) || f.age }))
+                      }}
+                    >
+                      <View className="ce-input ce-picker">{custForm.birthday || '选择生日'}</View>
+                    </Picker>
+                  </View>
+                  <View className="ce-field">
+                    <Text className="ce-k">年龄</Text>
+                    <Input
+                      className="ce-input"
+                      value={custForm.age}
+                      onInput={(e) => setCustForm({ ...custForm, age: e.detail.value.replace(/\D/g, '') })}
+                      onBlur={() => {
+                        // 输入年龄后自动补生日（仅定年份，月日取 1 月 1 日，可再细化）
+                        if (custForm.age && !custForm.birthday) {
+                          setCustForm((f) => ({ ...f, birthday: birthdayFromAge(f.age) }))
+                        }
+                      }}
+                      placeholder="如 35"
+                      placeholderClass="ref-field-placeholder"
+                      type="number"
+                      maxlength={3}
+                    />
+                  </View>
+                  <View className="ce-field">
+                    <Text className="ce-k">客户阶段</Text>
+                    <Picker
+                      mode="selector"
+                      range={CUST_STAGES.map((s) => s.label)}
+                      value={CUST_STAGES.findIndex((s) => s.key === custForm.stage)}
+                      onChange={(e) =>
+                        setCustForm({ ...custForm, stage: CUST_STAGES[Number(e.detail.value)]?.key || '' })
+                      }
+                    >
+                      <View className="ce-input ce-picker">
+                        {CUST_STAGE_LABEL[custForm.stage] || '选择客户阶段'}
+                      </View>
+                    </Picker>
+                  </View>
+                  <View className="ce-actions">
+                    <View className="ref-btn-sm ref-btn-sm-plain" onClick={() => setEditingId('')}>
+                      取消
+                    </View>
+                    <View
+                      className={`ref-btn-sm ref-btn-sm-primary${custSaving ? ' disabled' : ''}`}
+                      onClick={() => saveMeetingCustomer(m)}
+                    >
+                      {custSaving ? '保存中…' : '保存'}
+                    </View>
+                  </View>
                 </View>
               ) : null}
-              {String(m.status || '').toLowerCase() === 'failed' && m.error ? (
-                <Text className="meet-fail">{m.error}</Text>
-              ) : null}
-              <View className="meet-ops">
-                <Text
-                  className="meet-del"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    delMeeting(m)
-                  }}
-                >
-                  删除
-                </Text>
-              </View>
             </View>
           )
         })

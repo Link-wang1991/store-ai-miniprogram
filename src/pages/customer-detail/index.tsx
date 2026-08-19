@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react'
-import { View, Text, Input } from '@tarojs/components'
+import { View, Text, Input, Picker } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { customerApi } from '@/utils/api'
 import { isLoggedIn, getUserInfo } from '@/utils/auth'
-import { fmtDate } from '@/utils/format'
+import { fmtDate, ageFromBirthday, birthdayFromAge } from '@/utils/format'
 import { openCoach } from '@/utils/navigation'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
 import { showEditableModal } from '@/utils/ui'
 import './index.scss'
+
+const CUST_GENDERS = ['女', '男']
+const CUST_STAGES = [
+  { key: 'new', label: '新客' },
+  { key: 'intent', label: '意向' },
+  { key: 'deal', label: '已成交' },
+  { key: 'regular', label: '老客' },
+  { key: 'churn_risk', label: '流失风险' },
+]
+const CUST_STAGE_LABEL: Record<string, string> = Object.fromEntries(CUST_STAGES.map((s) => [s.key, s.label]))
 
 export default function CustomerDetail() {
   const router = useRouter()
@@ -16,6 +26,10 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true)
   const [c, setC] = useState<any>(null)
   const [q, setQ] = useState('')
+  // 内联编辑客户资料（参照会谈/客户页）
+  const [custEditOpen, setCustEditOpen] = useState(false)
+  const [custForm, setCustForm] = useState({ name: '', phone: '', gender: '', age: '', birthday: '', stage: '' })
+  const [custSaving, setCustSaving] = useState(false)
 
   const user = getUserInfo()
   const isAdmin = !!user && ['owner', 'admin', 'manager'].includes(user.role)
@@ -42,8 +56,27 @@ export default function CustomerDetail() {
   }
 
   function call() {
-    if (c?.phone) Taro.makePhoneCall({ phoneNumber: String(c.phone) })
-    else Taro.showToast({ title: '暂无手机号', icon: 'none' })
+    const phone = String(c?.phone || '')
+    if (!phone || !/^1\d{10}$/.test(phone)) {
+      Taro.showModal({
+        title: '暂无有效手机号',
+        content: '当前客户没有有效的 11 位手机号，无法致电。请先「编辑资料」补全手机号，或「绑定客户」关联到有手机号的正式客户。',
+        showCancel: false,
+        confirmText: '知道了',
+        confirmColor: '#008448',
+      })
+      return
+    }
+    // 确认弹窗：显示脱敏号码，避免误触
+    Taro.showModal({
+      title: '致电客户',
+      content: `确认拨打 ${phone.slice(0, 3)}****${phone.slice(-4)} 吗？`,
+      confirmText: '拨号',
+      confirmColor: '#008448',
+      success: (r) => {
+        if (r.confirm) Taro.makePhoneCall({ phoneNumber: phone })
+      },
+    })
   }
 
   // 客户合并：把其他客户（如"新客户 xx"占位档案）合并进当前客户
@@ -144,34 +177,51 @@ export default function CustomerDetail() {
     }
   }
 
-  // 编辑客户：姓名 + 手机号
+  // 编辑客户资料：展开内联面板（参照会谈/客户页）
   async function editCustomer() {
-    const nameRes = await showEditableModal({
-      title: '客户姓名',
-      content: c?.name || '',
-      placeholderText: '输入客户姓名',
-      confirmColor: '#008448',
+    if (custEditOpen) {
+      setCustEditOpen(false)
+      return
+    }
+    setCustForm({
+      name: c?.name || '',
+      phone: c?.phone || '',
+      gender: c?.gender === 'female' ? '女' : c?.gender === 'male' ? '男' : '',
+      age: c?.age ? String(c.age) : '',
+      birthday: c?.birthday ? String(c.birthday).slice(0, 10) : '',
+      stage: c?.stage || '',
     })
-    if (!nameRes.confirm) return
-    const name = nameRes.content?.trim()
-    const phoneRes = await showEditableModal({
-      title: '客户手机号',
-      content: c?.phone || '',
-      placeholderText: '输入手机号（可选）',
-      confirmColor: '#008448',
-    })
-    if (!phoneRes.confirm) return
-    const phone = phoneRes.content?.trim()
-    if (!name && !phone) return
-    const data: any = {}
-    if (name) data.name = name
-    if (phone) data.phone = phone
-    const r = await customerApi.update(id, data)
-    if (r.ok) {
+    setCustEditOpen(true)
+  }
+
+  // 保存客户档案资料（改客户档案，改名时后端自动同步相关会谈 customer_name）
+  async function saveCustomer() {
+    const name = custForm.name.trim()
+    if (!name) {
+      Taro.showToast({ title: '姓名不能为空', icon: 'none' })
+      return
+    }
+    if (custForm.phone && !/^1\d{10}$/.test(custForm.phone)) {
+      Taro.showToast({ title: '手机号格式不正确', icon: 'none' })
+      return
+    }
+    setCustSaving(true)
+    const payload: any = {
+      name,
+      phone: custForm.phone || null,
+      gender: custForm.gender === '男' ? 'male' : custForm.gender === '女' ? 'female' : null,
+      age: custForm.age ? Number(custForm.age) : null,
+      birthday: custForm.birthday || null,
+      stage: custForm.stage || null,
+    }
+    const ur = await customerApi.update(id, payload)
+    setCustSaving(false)
+    if (ur.ok) {
       Taro.showToast({ title: '已保存客户资料', icon: 'none' })
+      setCustEditOpen(false)
       load()
     } else {
-      Taro.showToast({ title: r.error || '保存失败', icon: 'none' })
+      Taro.showToast({ title: ur.error || '保存失败', icon: 'none' })
     }
   }
 
@@ -238,6 +288,105 @@ export default function CustomerDetail() {
           ) : null}
         </View>
       </View>
+
+      {/* 内联编辑客户资料（参照会谈/客户页） */}
+      {custEditOpen ? (
+        <View className="ref-card cd-cust-edit">
+          <Text className="cd-ce-title">编辑客户资料</Text>
+          <View className="cd-ce-field">
+            <Text className="cd-ce-k">姓名</Text>
+            <Input
+              className="cd-ce-input"
+              value={custForm.name}
+              onInput={(e) => setCustForm({ ...custForm, name: e.detail.value })}
+              placeholder="客户姓名"
+              placeholderClass="ref-field-placeholder"
+              maxlength={20}
+            />
+          </View>
+          <View className="cd-ce-field">
+            <Text className="cd-ce-k">手机号</Text>
+            <Input
+              className="cd-ce-input"
+              value={custForm.phone}
+              onInput={(e) => setCustForm({ ...custForm, phone: e.detail.value })}
+              placeholder="11 位手机号"
+              placeholderClass="ref-field-placeholder"
+              type="number"
+              maxlength={11}
+            />
+          </View>
+          <View className="cd-ce-field">
+            <Text className="cd-ce-k">性别</Text>
+            <Picker
+              mode="selector"
+              range={CUST_GENDERS}
+              value={CUST_GENDERS.indexOf(custForm.gender) < 0 ? -1 : CUST_GENDERS.indexOf(custForm.gender)}
+              onChange={(e) => setCustForm({ ...custForm, gender: CUST_GENDERS[Number(e.detail.value)] || '' })}
+            >
+              <View className="cd-ce-input cd-ce-picker">{custForm.gender || '选择性别'}</View>
+            </Picker>
+          </View>
+          <View className="cd-ce-field">
+            <Text className="cd-ce-k">生日</Text>
+            <Picker
+              mode="date"
+              start="1900-01-01"
+              end={new Date().toISOString().slice(0, 10)}
+              value={custForm.birthday || '2000-01-01'}
+              onChange={(e) => {
+                const bd = e.detail.value
+                setCustForm((f) => ({ ...f, birthday: bd, age: ageFromBirthday(bd) || f.age }))
+              }}
+            >
+              <View className="cd-ce-input cd-ce-picker">{custForm.birthday || '选择生日'}</View>
+            </Picker>
+          </View>
+          <View className="cd-ce-field">
+            <Text className="cd-ce-k">年龄</Text>
+            <Input
+              className="cd-ce-input"
+              value={custForm.age}
+              onInput={(e) => setCustForm({ ...custForm, age: e.detail.value.replace(/\D/g, '') })}
+              onBlur={() => {
+                if (custForm.age && !custForm.birthday) {
+                  setCustForm((f) => ({ ...f, birthday: birthdayFromAge(f.age) }))
+                }
+              }}
+              placeholder="如 35"
+              placeholderClass="ref-field-placeholder"
+              type="number"
+              maxlength={3}
+            />
+          </View>
+          <View className="cd-ce-field">
+            <Text className="cd-ce-k">客户阶段</Text>
+            <Picker
+              mode="selector"
+              range={CUST_STAGES.map((s) => s.label)}
+              value={CUST_STAGES.findIndex((s) => s.key === custForm.stage)}
+              onChange={(e) =>
+                setCustForm({ ...custForm, stage: CUST_STAGES[Number(e.detail.value)]?.key || '' })
+              }
+            >
+              <View className="cd-ce-input cd-ce-picker">
+                {CUST_STAGE_LABEL[custForm.stage] || '选择客户阶段'}
+              </View>
+            </Picker>
+          </View>
+          <View className="cd-ce-actions">
+            <View className="ref-btn-sm ref-btn-sm-plain" onClick={() => setCustEditOpen(false)}>
+              取消
+            </View>
+            <View
+              className={`ref-btn-sm ref-btn-sm-primary${custSaving ? ' disabled' : ''}`}
+              onClick={saveCustomer}
+            >
+              {custSaving ? '保存中…' : '保存'}
+            </View>
+          </View>
+        </View>
+      ) : null}
 
       {/* 今日简报 */}
       {c.ai_insight || c.core_need || c.risk || c.opening_script ? (

@@ -347,31 +347,48 @@
   white-space: nowrap;
 }
 
+// 会谈场景标签：与客户名同一排（紧跟客户名之后，状态标签右侧）
+.meet-scene {
+  font-size: 11px;
+  color: $green-dark;
+  background: #eaf6ef;
+  padding: 2px 8px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 30%;
+}
+
 .meet-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-top: 8px;
-  padding-left: 25px;
 }
 
-.meet-scene {
-  font-size: 12px;
-  color: $muted;
-  background: #f3f7f3;
-  padding: 2px 8px;
-  border-radius: 8px;
-}
-
+// 评分 + 时长 靠左排布（左移到场景下方），操作按钮靠右
 .meet-score {
   font-size: 13px;
   color: $green;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+// 评分与时长之间的分隔点，让两者明确是两个独立内容
+.meet-meta-sep {
+  font-size: 13px;
+  color: $faint;
+  line-height: 1;
+  margin: 0 6px;
+  flex-shrink: 0;
 }
 
 .meet-time {
   font-size: 12px;
   color: $faint;
+  flex-shrink: 0;
 }
 
 .progress-track {
@@ -404,8 +421,17 @@
 }
 
 .meet-ops {
-  margin-top: 8px;
-  padding-left: 25px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.meet-op {
+  font-size: 12px;
+  color: $green-dark;
+  padding: 3px 6px;
 }
 
 .meet-del {
@@ -417,4 +443,58 @@
 .rec-upload-disabled {
   color: #b5bdc6;
   font-weight: 400;
+}
+
+// 会谈卡片内联编辑客户资料（对齐客户页）
+.meet-cust-edit {
+  margin: 10px 0 4px;
+  margin-left: 25px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: $surface-2;
+  padding: 12px;
+}
+
+.ce-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+  margin-bottom: 10px;
+}
+
+.ce-field {
+  margin-bottom: 9px;
+}
+
+.ce-k {
+  display: block;
+  font-size: 12px;
+  color: $muted;
+  margin-bottom: 4px;
+}
+
+.ce-input {
+  width: 100%;
+  height: 38px;
+  line-height: 38px;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: $ink;
+  box-sizing: border-box;
+}
+
+.ce-picker {
+  display: flex;
+  align-items: center;
+}
+
+.ce-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }

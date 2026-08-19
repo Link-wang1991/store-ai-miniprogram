@@ -3,7 +3,7 @@ import { View, Text, Input, ScrollView, Picker } from '@tarojs/components'
 import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 import { customerApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
-import { fmtDate } from '@/utils/format'
+import { fmtDate, ageFromBirthday, birthdayFromAge } from '@/utils/format'
 import { consumeCustomerPool, openCoach } from '@/utils/navigation'
 import { setActiveTab } from '@/utils/ui'
 import Icon from '@/components/Icon'
@@ -69,7 +69,7 @@ export default function Customers() {
   const [q, setQ] = useState('')
   // 内联编辑面板：editingId 非空时展开对应客户卡片
   const [editingId, setEditingId] = useState('')
-  const [form, setForm] = useState({ name: '', phone: '', gender: '', age: '', stage: '' })
+  const [form, setForm] = useState({ name: '', phone: '', gender: '', age: '', birthday: '', stage: '' })
   const [saving, setSaving] = useState(false)
 
   useDidShow(() => {
@@ -165,6 +165,7 @@ export default function Customers() {
       phone: c.phone || '',
       gender: c.gender === 'female' ? '女' : c.gender === 'male' ? '男' : '',
       age: c.age ? String(c.age) : '',
+      birthday: c.birthday ? String(c.birthday).slice(0, 10) : '',
       stage: c.stage || '',
     })
     setEditingId(c.id)
@@ -187,6 +188,7 @@ export default function Customers() {
       phone: form.phone || null,
       gender: form.gender === '男' ? 'male' : form.gender === '女' ? 'female' : null,
       age: form.age ? Number(form.age) : null,
+      birthday: form.birthday || null,
       stage: form.stage || null,
     }
     const ur = await customerApi.update(c.id, payload)
@@ -376,11 +378,32 @@ export default function Customers() {
                   </Picker>
                 </View>
                 <View className="ce-field">
+                  <Text className="ce-k">生日</Text>
+                  <Picker
+                    mode="date"
+                    start="1900-01-01"
+                    end={new Date().toISOString().slice(0, 10)}
+                    value={form.birthday || '2000-01-01'}
+                    onChange={(e) => {
+                      const bd = e.detail.value
+                      setForm((f) => ({ ...f, birthday: bd, age: ageFromBirthday(bd) || f.age }))
+                    }}
+                  >
+                    <View className="ce-input ce-picker">{form.birthday || '选择生日'}</View>
+                  </Picker>
+                </View>
+                <View className="ce-field">
                   <Text className="ce-k">年龄</Text>
                   <Input
                     className="ce-input"
                     value={form.age}
                     onInput={(e) => setForm({ ...form, age: e.detail.value.replace(/\D/g, '') })}
+                    onBlur={() => {
+                      // 输入年龄后自动补生日（仅定年份，月日取 1 月 1 日，可再细化）
+                      if (form.age && !form.birthday) {
+                        setForm((f) => ({ ...f, birthday: birthdayFromAge(f.age) }))
+                      }
+                    }}
                     placeholder="如 35"
                     placeholderClass="ref-field-placeholder"
                     type="number"
