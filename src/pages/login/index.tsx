@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { View, Text, Input } from '@tarojs/components'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro from '@tarojs/taro'
 import { authApi, type LoginData } from '@/utils/api'
 import { isLoggedIn, setToken, setUserInfo } from '@/utils/auth'
 import './index.scss'
@@ -30,12 +30,13 @@ export default function Login() {
   const timerRef = useRef<ReturnType<typeof setInterval>>()
   const bindTimerRef = useRef<ReturnType<typeof setInterval>>()
 
-  useDidShow(() => {
-    // 登录态持久化在 Storage：已登录用户打开小程序直接进首页，无需重复登录
+  // 已登录用户打开小程序直接进首页（仅在页面首次挂载时判断一次，
+  // 避免退出登录后 reLaunch 到登录页时 useDidShow 再次触发而瞬间跳回首页，造成"退出无效"）。
+  useEffect(() => {
     if (isLoggedIn()) {
       Taro.reLaunch({ url: '/pages/home/index' })
     }
-  })
+  }, [])
 
   useEffect(() => {
     return () => {

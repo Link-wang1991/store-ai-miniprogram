@@ -70,6 +70,36 @@ const ROLE_LABEL: Record<string, string> = {
   other: '其他',
 }
 
+// ---- 教练工作台：10 个常见情况卡 ----
+const SCENARIO_CARDS: { title: string; sub: string; question: string }[] = [
+  { title: '客户嫌贵', sub: '价格异议，价值锚定不轻易降价', question: '客户嫌贵，怎么回？' },
+  { title: '考虑一下', sub: '模糊拒绝，挖出真实顾虑', question: '客户说"考虑一下"怎么破？' },
+  { title: '不回微信', sub: '跟进节奏与重启话术', question: '客户不回微信，怎么跟进？' },
+  { title: '问效果', sub: '效果承诺边界 + 禁用表达', question: '客户问效果怎么回既真诚又不踩雷？' },
+  { title: '对比别家', sub: '差异化价值，不贬低同行', question: '客户在对比别家项目怎么应对？' },
+  { title: '老客唤醒', sub: '低压力召回，不催单', question: '老客户很久没来怎么唤醒？' },
+  { title: '服务后回访', sub: '体验确认 + 复购铺垫', question: '服务结束后怎么回访能带复购？' },
+  { title: '客户投诉', sub: '先安抚情绪再补救', question: '客户投诉怎么处理？' },
+  { title: '活动介绍', sub: '结合当前主推活动邀约', question: '怎么介绍当前主推活动能促到店？' },
+  { title: '项目讲解', sub: '卖点 + 适应人群 + 安全性', question: '项目讲解怎么说更可信？' },
+]
+
+// ---- 教练工作台：9 块方法论 ----
+const NINE_BLOCKS = [
+  '客户判断',
+  '沟通策略',
+  '建议话术',
+  '追问问题',
+  '下一步动作',
+  '风险提醒',
+  '是否需要升级',
+  '是否补充客户标签',
+  '参考知识来源',
+]
+
+// ---- 教练工作台：参考知识来源（合入到门店知识库） ----
+const KNOWLEDGE_CHIPS = ['本月活动方案', '补水护理 SOP', '价格异议话术', '禁用表达规则']
+
 let seq = 0
 const nid = () => `m${Date.now()}_${seq++}`
 
@@ -406,6 +436,133 @@ function AiBubble({
   )
 }
 
+// ---- 教练工作台（设计图 1：未进入对话时） ----
+function CoachWorkbench({
+  customerId,
+  customerName,
+  onPickCustomer,
+  onAsk,
+  onAskScenario,
+  onPickKnowledge,
+  onOpenSession,
+  recentSessions,
+}: {
+  customerId: string
+  customerName: string
+  onPickCustomer: () => void
+  onAsk: (q: string) => void
+  onAskScenario: (q: string) => void
+  onPickKnowledge: (k: string) => void
+  onOpenSession: (s: any) => void
+  recentSessions: any[]
+}) {
+  const hasCustomer = !!customerId
+  return (
+    <View className="coach-wb">
+      <Text className="wb-subtitle">选客户 / 看话术 / 自由问</Text>
+
+      {/* 选客户卡：已选定客户时展示客户名，可点击切换 */}
+      <View className={`wb-cust-card${hasCustomer ? ' has-customer' : ''}`} onClick={onPickCustomer}>
+        <View className="wb-cust-card-left">
+          <Text className="wb-cust-title">
+            {hasCustomer ? `正在针对：${customerName || '客户'}` : '想让回答更准？先选客户'}
+          </Text>
+          <Text className="wb-cust-sub">
+            {hasCustomer
+              ? '已结合这位客户的画像、顾虑和历史，回答会更有针对性'
+              : '选好后 AI 会结合这位客户的画像、顾虑和历史给出建议'}
+          </Text>
+        </View>
+        <View className="wb-cust-pick">
+          {hasCustomer ? '切换' : '选客户'}
+        </View>
+      </View>
+
+      {/* 10 个问题卡 */}
+      <View className="wb-section">
+        <Text className="wb-section-title">遇到这些情况，点一下就问</Text>
+        <View className="wb-scenarios">
+          {SCENARIO_CARDS.map((s) => (
+            <View key={s.title} className="wb-scenario" onClick={() => onAskScenario(s.question)}>
+              <Text className="wb-scenario-title">{s.title}</Text>
+              <Text className="wb-scenario-sub">{s.sub}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* 9 块方法论卡 */}
+      <View className="wb-nine-card">
+        <Text className="wb-nine-title">每次回答都给你这 9 块</Text>
+        <View className="wb-nine-list">
+          {NINE_BLOCKS.map((b, i) => (
+            <Text key={b} className="wb-nine-item">
+              <Text className="wb-nine-no">{i + 1}.</Text>
+              <Text>{b}</Text>
+            </Text>
+          ))}
+        </View>
+      </View>
+
+      {/* 参考知识来源（合入到门店知识库） */}
+      <View className="wb-knowledge">
+        <Text className="wb-knowledge-title">参考知识来源（合入到门店知识库）</Text>
+        <View className="wb-knowledge-row">
+          {KNOWLEDGE_CHIPS.map((k) => (
+            <View key={k} className="wb-knowledge-chip" onClick={() => onPickKnowledge(k)}>
+              {k}
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* 最近对话 */}
+      <View className="wb-recent">
+        <View className="wb-recent-head">
+          <Text className="wb-recent-title">最近对话</Text>
+          <Text className="wb-recent-new" onClick={() => onOpenSession({ id: null })}>
+            + 新对话
+          </Text>
+        </View>
+        {recentSessions.length === 0 ? (
+          <View className="wb-recent-empty">
+            <Text className="wb-recent-empty-text">关于这位客户，帮我分析一下</Text>
+            <Text className="wb-recent-empty-no">11</Text>
+          </View>
+        ) : (
+          <ScrollView scrollX className="wb-recent-scroll" showScrollbar={false}>
+            <View className="wb-recent-row">
+              {recentSessions.slice(0, 8).map((s) => (
+                <View key={s.id} className="wb-recent-card" onClick={() => onOpenSession(s)}>
+                  <Text className="wb-recent-card-title" numberOfLines={2}>
+                    {s.title || '历史对话'}
+                  </Text>
+                  <Text className="wb-recent-card-time">{s.updatedAtLabel || ''}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+      </View>
+    </View>
+  )
+}
+
+// ---- 经典对话空态（设计图 2） ----
+function ClassicEmpty({ onPick, onAsk }: { onPick: (q: string) => void; onAsk: (q: string) => void }) {
+  return (
+    <View className="classic-empty-2">
+      <View className="ce2-tip">
+        <Text className="ce2-tip-text">
+          这里是<Text className="ce2-bold">自由对话</Text>，想问什么直接说。想要「点一下出结构化结果」？回{' '}
+          <Text className="ce2-bold">AI 教练工作台</Text>
+        </Text>
+      </View>
+      <View className="ce2-spacer" />
+    </View>
+  )
+}
+
 export default function Chat() {
   const router = useRouter()
   const [mode, setMode] = useState<'coach' | 'classic'>('coach')
@@ -570,25 +727,27 @@ export default function Chat() {
     if (s.id === sessionId) return
     setSessionId(s.id)
     setMessages([])
-    setLoadingHistory(true)
-    const r = await chatApi.listMessages(s.id)
-    setLoadingHistory(false)
-    if (r.ok && Array.isArray(r.data)) {
-      setMessages(
-        r.data.map((m: any) => ({
-          id: m.id || nid(),
-          role: m.role === 'user' ? ('user' as const) : ('ai' as const),
-          text: m.text || m.content || '',
-          answerType: m.answerType,
-          riskLevel: m.riskLevel,
-          generationMode: m.generationMode,
-          messageId: m.id,
-          retrieved: m.retrieved,
-          methodology: m.methodology,
-          actionProposal: m.actionProposal,
-          feedbackType: m.feedbackType,
-        }))
-      )
+    if (s.id) {
+      setLoadingHistory(true)
+      const r = await chatApi.listMessages(s.id)
+      setLoadingHistory(false)
+      if (r.ok && Array.isArray(r.data)) {
+        setMessages(
+          r.data.map((m: any) => ({
+            id: m.id || nid(),
+            role: m.role === 'user' ? ('user' as const) : ('ai' as const),
+            text: m.text || m.content || '',
+            answerType: m.answerType,
+            riskLevel: m.riskLevel,
+            generationMode: m.generationMode,
+            messageId: m.id,
+            retrieved: m.retrieved,
+            methodology: m.methodology,
+            actionProposal: m.actionProposal,
+            feedbackType: m.feedbackType,
+          }))
+        )
+      }
     }
   }
 
@@ -621,173 +780,197 @@ export default function Chat() {
   }
 
   const lastMsgId = messages.length ? `msg-${messages[messages.length - 1].id}` : ''
+  const isHome = mode === 'coach' && messages.length === 0
+  const isClassicEmpty = mode === 'classic' && messages.length === 0
 
   return (
     <View className="page chat-page">
+      {/* 固定顶部标题区：切换 tab 时保持一致，仅切换下方内容 */}
+      <View className="coach-topbar">
+        <View className="coach-topbar-title">AI 教练</View>
+        <Text className="coach-topbar-sub">选客户 / 看话术 / 自由问</Text>
+      </View>
+
       {/* 模式切换 */}
       <View className="mode-tabs">
-        <View className={`mode-tab${mode === 'coach' ? ' active' : ''}`} onClick={() => setMode('coach')}>
+        <View className={`mode-tab${mode === 'coach' ? ' active' : ''}`} onClick={() => { setMode('coach'); newSession() }}>
           教练工作台
         </View>
-        <View className={`mode-tab${mode === 'classic' ? ' active' : ''}`} onClick={() => setMode('classic')}>
+        <View className={`mode-tab${mode === 'classic' ? ' active' : ''}`} onClick={() => { setMode('classic'); newSession() }}>
           经典对话
         </View>
       </View>
 
-      {/* 会话历史（经典对话模式，对齐 Web） */}
-      {mode === 'classic' ? (
-        <ScrollView scrollX className="session-scroll" showScrollbar={false}>
-          <View className="session-row">
-            <View className={`session-chip${!sessionId ? ' active' : ''}`} onClick={newSession}>
-              新对话
-            </View>
-            {sessions.map((s) => (
-              <View
-                key={s.id}
-                className={`session-chip${sessionId === s.id ? ' active' : ''}`}
-                onClick={() => openSession(s)}
-              >
-                <Text className="session-chip-text">{s.title || '历史对话'}</Text>
-                <Text
-                  className="session-del"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    deleteSession(s)
-                  }}
-                >
-                  ×
-                </Text>
+      {/* 教练工作台空态：设计图 1 */}
+      {isHome ? (
+        <CoachWorkbench
+          customerId={customerId}
+          customerName={customerName}
+          onPickCustomer={openCustomerPicker}
+          onAsk={(q) => send(q)}
+          onAskScenario={(q) => send(q)}
+          onPickKnowledge={(k) => send(`请帮我讲讲「${k}」相关的应对话术`)}
+          onOpenSession={(s) => (s.id ? openSession(s) : newSession())}
+          recentSessions={sessions}
+        />
+      ) : isClassicEmpty ? (
+        <ScrollView
+          scrollY
+          className="chat-scroll"
+          scrollIntoView={lastMsgId}
+          scrollWithAnimation
+        >
+          <View className="chat-scroll-inner">
+            {/* 经典对话：新对话 + 会话历史 */}
+            <ScrollView scrollX className="session-scroll" showScrollbar={false}>
+              <View className="session-row">
+                <View className={`session-chip new-conversation${!sessionId ? ' active' : ''}`} onClick={newSession}>
+                  新对话
+                </View>
+                {sessions.map((s) => (
+                  <View
+                    key={s.id}
+                    className={`session-chip${sessionId === s.id ? ' active' : ''}`}
+                    onClick={() => openSession(s)}
+                  >
+                    <Text className="session-chip-text">{s.title || '历史对话'}</Text>
+                    <Text
+                      className="session-del"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteSession(s)
+                      }}
+                    >
+                      ×
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
+            </ScrollView>
+            <ClassicEmpty onAsk={pickQuick} onPick={pickQuick} />
           </View>
         </ScrollView>
-      ) : null}
-
-      {/* 上下文卡（教练工作台）/ 客户条（经典对话）—— 对齐 Web 两套组件 */}
-      {mode === 'coach' ? (
-        <View className="ref-card ctx-card">
-          <View className="ctx-top">
-            <Text className="ctx-badge">{customerId ? '客户模式' : '自由对话'}</Text>
-            <Text className="ctx-title">{customerName || '门店经营助手'}</Text>
-            <Text className="ctx-switch" onClick={openCustomerPicker}>
-              {customerId ? '切换客户' : '选择客户'}
-            </Text>
-          </View>
-          <Text className="ctx-meta">
-            {customerId ? '已关联画像与历史' : '可随时直接提问'} · {user?.roleLabel || user?.role || '员工'}
-          </Text>
-          {showCustPicker ? (
-            <View className="cust-picker">
-              <ScrollView scrollY className="cust-picker-scroll">
-                {customers.length === 0 ? (
-                  <Text className="picker-empty">暂无客户</Text>
-                ) : (
-                  customers.map((c) => (
-                    <View key={c.id} className="picker-item" onClick={() => switchCustomer(c)}>
-                      <Text>{c.name}</Text>
-                      <Text className="picker-sub">尾号 {String(c.phone || '').slice(-4)}</Text>
+      ) : (
+        <ScrollView scrollY className="chat-scroll" scrollIntoView={lastMsgId} scrollWithAnimation>
+          <View className="chat-scroll-inner">
+            {/* 经典对话：新对话 + 会话历史（对话进行中也显示） */}
+            {mode === 'classic' ? (
+              <ScrollView scrollX className="session-scroll" showScrollbar={false}>
+                <View className="session-row">
+                  <View className={`session-chip new-conversation${!sessionId ? ' active' : ''}`} onClick={newSession}>
+                    新对话
+                  </View>
+                  {sessions.map((s) => (
+                    <View
+                      key={s.id}
+                      className={`session-chip${sessionId === s.id ? ' active' : ''}`}
+                      onClick={() => openSession(s)}
+                    >
+                      <Text className="session-chip-text">{s.title || '历史对话'}</Text>
+                      <Text
+                        className="session-del"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteSession(s)
+                        }}
+                      >
+                        ×
+                      </Text>
                     </View>
-                  ))
-                )}
+                  ))}
+                </View>
               </ScrollView>
-            </View>
-          ) : null}
-        </View>
-      ) : customerId && customerName ? (
-        <View className="classic-cust-bar">
-          <Text>正在针对客户</Text>
-          <Text className="ccb-name">{customerName}</Text>
-          <Text className="ccb-sub">· 已结合 TA 的画像与历史</Text>
-        </View>
-      ) : null}
+            ) : null}
 
-      {/* 消息区 */}
-      <ScrollView scrollY className="chat-scroll" scrollIntoView={lastMsgId} scrollWithAnimation>
-        <View className="chat-scroll-inner">
-        {messages.length === 0 ? (
-          mode === 'coach' ? (
-          <View className="empty-guide">
-            <View className="guide-card">
-              <Text className="guide-title">可以直接说</Text>
-              <Text className="guide-sub">描述客户的顾虑、当前进展或你想达成的目标，我会给你可直接使用的话术和下一步动作。</Text>
-            </View>
-            <View className="guide-grid">
-              <View className="guide-item guide-blue">
-                <Text className="guide-k">接下来要问</Text>
-                <Text className="guide-v">客户最在意什么？</Text>
-                <Text className="guide-v">哪一步还没确认？</Text>
+            {/* 上下文卡（教练工作台模式） */}
+            {mode === 'coach' ? (
+              <View className="ref-card ctx-card">
+                <View className="ctx-top">
+                  <Text className="ctx-badge">{customerId ? '客户模式' : '自由对话'}</Text>
+                  <Text className="ctx-title">{customerName || '门店经营助手'}</Text>
+                  <Text className="ctx-switch" onClick={openCustomerPicker}>
+                    {customerId ? '切换客户' : '选择客户'}
+                  </Text>
+                </View>
+                <Text className="ctx-meta">
+                  {customerId ? '已关联画像与历史' : '可随时直接提问'} · {user?.roleLabel || user?.role || '员工'}
+                </Text>
+                {showCustPicker ? (
+                  <View className="cust-picker">
+                    <ScrollView scrollY className="cust-picker-scroll">
+                      {customers.length === 0 ? (
+                        <Text className="picker-empty">暂无客户</Text>
+                      ) : (
+                        customers.map((c) => (
+                          <View key={c.id} className="picker-item" onClick={() => switchCustomer(c)}>
+                            <Text>{c.name}</Text>
+                            <Text className="picker-sub">尾号 {String(c.phone || '').slice(-4)}</Text>
+                          </View>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                ) : null}
               </View>
-              <View className="guide-item guide-green">
-                <Text className="guide-k">下一步动作</Text>
-                <Text className="guide-v">明确目标后发起跟进</Text>
-                <Text className="guide-v">负责人：{user?.roleLabel || user?.role || '员工'} · 今日</Text>
-              </View>
-            </View>
-            <View className="guide-risk">
-              <View className="guide-risk-k">
-                <Icon svg={ICN.warn('#d94b3d')} size={28} />
-                <Text>风险提醒</Text>
-              </View>
-              <Text className="guide-risk-v">涉及价格、承诺或投诉时，先确认事实与客户感受，避免直接给出折扣承诺。</Text>
-            </View>
-          </View>
-          ) : (
-            <View className="classic-empty">
-              <Text>这里是<Text className="ce-bold">自由对话</Text>，想问什么直接说。</Text>
-              <Text className="ce-sub">
-                想要「点一下出结构化结果」？回
-                <Text className="ce-link" onClick={() => setMode('coach')}>AI 教练工作台</Text>
-              </Text>
-            </View>
-          )
-        ) : (
-          messages.map((m) => (
-            <View key={m.id} id={`msg-${m.id}`} className={`msg-row ${m.role}`}>
-              {m.role === 'ai' ? <View className="ai-badge">AI</View> : null}
-              {m.role === 'ai' ? (
-                <AiBubble
-                  m={m}
-                  canCreateAction={!!customerId && !m.error}
-                  onFeedback={(label) => handleFeedback(m, label)}
-                  onCreateAction={() => createAction(m)}
-                  onResolveAction={(decision) => resolveAction(m, decision)}
-                  onUpdateAction={(input) => updateAction(m, input)}
-                />
-              ) : (
-                <View className="msg-bubble user">{renderRich(m.text)}</View>
-              )}
-            </View>
-          ))
-        )}
-        {sending ? (
-          <View className="msg-row ai">
-            <View className="ai-badge">AI</View>
-            <View className="msg-bubble ai">
-              <Text className="loading-tip">正在检索门店知识并组织建议…</Text>
-            </View>
-          </View>
-        ) : null}
-        </View>
-      </ScrollView>
+            ) : null}
 
-      {/* 快捷问题 */}
-      <ScrollView scrollX className="quick-scroll" showScrollbar={false}>
-        <View className="quick-row">
-          {QUICK_QUESTIONS.map((q) => (
-            <View key={q} className="quick-chip" onClick={() => pickQuick(q)}>
+            {/* 客户条（经典对话已选客户时） */}
+            {mode === 'classic' && customerId && customerName ? (
+              <View className="classic-cust-bar">
+                <Text>正在针对客户</Text>
+                <Text className="ccb-name">{customerName}</Text>
+                <Text className="ccb-sub">· 已结合 TA 的画像与历史</Text>
+              </View>
+            ) : null}
+
+            {/* 消息列表 */}
+            {messages.map((m) => (
+              <View key={m.id} id={`msg-${m.id}`} className={`msg-row ${m.role}`}>
+                {m.role === 'ai' ? <View className="ai-badge">AI</View> : null}
+                {m.role === 'ai' ? (
+                  <AiBubble
+                    m={m}
+                    canCreateAction={!!customerId && !m.error}
+                    onFeedback={(label) => handleFeedback(m, label)}
+                    onCreateAction={() => createAction(m)}
+                    onResolveAction={(decision) => resolveAction(m, decision)}
+                    onUpdateAction={(input) => updateAction(m, input)}
+                  />
+                ) : (
+                  <View className="msg-bubble user">{renderRich(m.text)}</View>
+                )}
+              </View>
+            ))}
+            {sending ? (
+              <View className="msg-row ai">
+                <View className="ai-badge">AI</View>
+                <View className="msg-bubble ai">
+                  <Text className="loading-tip">正在检索门店知识并组织建议…</Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        </ScrollView>
+      )}
+
+      {/* 快捷问题：仅在两个空态之外的输入区展示（设计图 2 在空态底部也有建议 chip） */}
+      {isClassicEmpty ? (
+        <View className="ce2-suggest">
+          {QUICK_QUESTIONS.slice(0, 2).map((q) => (
+            <View key={q} className="ce2-suggest-chip" onClick={() => pickQuick(q)}>
               {q}
             </View>
           ))}
         </View>
-      </ScrollView>
+      ) : null}
 
-      {/* 输入区 */}
+      {/* 输入区：所有模式共用 */}
       <View className="chat-input-bar">
         <Textarea
           className="chat-input"
           value={input}
           onInput={(e) => setInput(e.detail.value)}
-          placeholder="向 AI 教练提问"
+          placeholder={mode === 'classic' ? '向 AI 教练提问' : '想点什么场景或直接描述客户顾虑…'}
           placeholderClass="ref-field-placeholder"
           autoHeight
           maxlength={2000}

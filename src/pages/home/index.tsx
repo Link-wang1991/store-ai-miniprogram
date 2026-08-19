@@ -79,9 +79,6 @@ export default function Home() {
   const todayTasks = tasks.filter(
     (t) => t.due_at && new Date(t.due_at).toDateString() === new Date().toDateString()
   )
-  const riskTasks = tasks.filter(
-    (t) => String(t.priority) === 'urgent' || String(t.status).includes('risk')
-  )
 
   const tabTasks = tasks.filter((t) => {
     if (tab === 'high') return ['important', 'urgent'].includes(t.priority)
@@ -105,20 +102,7 @@ export default function Home() {
           <View className="hero-left">
             <Text className="hero-date">{fmtCnDate()}</Text>
             <Text className="hero-greet">早上好，{user?.name || '伙伴'}</Text>
-            <View className="hero-tags">
-              <View className="hero-tag tag-ok" onClick={() => goTasks('due_today')}>
-                <Text className="tag-num">{todayTasks.length}</Text>
-                <Text className="tag-lbl">项跟进</Text>
-              </View>
-              <View className="hero-tag tag-risk" onClick={() => goTasks('risk')}>
-                <Text className="tag-num">{riskTasks.length}</Text>
-                <Text className="tag-lbl">项风险</Text>
-              </View>
-            </View>
           </View>
-        </View>
-        <View className="hero-mic" onClick={() => goChat()}>
-          <Icon svg={ICN.mic('#fff')} size={44} />
         </View>
       </View>
 

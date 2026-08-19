@@ -1,13 +1,13 @@
-// AI 教练 —— 对齐 Web ChatClient（模式切换 / 上下文卡 / 空态引导 / 气泡 / 折叠引用 / 反馈 / 快捷问题）
+// AI 教练 —— 教练工作台（设计图 1）/ 经典对话（设计图 2）
 .chat-page {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding-bottom: 0;
-  padding-left: 0;
-  padding-right: 0;
+  // 底部为固定输入栏(≈54px) + 自定义 tabBar 让位，避免内容被遮挡
+  padding-bottom: calc(54px + 72px + env(safe-area-inset-bottom));
   max-width: 430PX;
   margin: 0 auto;
+  background: $page;
 }
 
 .chat-body {
@@ -17,11 +17,28 @@
   min-height: 0;
 }
 
-// 模式切换
+// ====================== 顶部标题区 ======================
+.coach-topbar {
+  padding: 8px 16px 0;
+}
+.coach-topbar-title {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: $ink;
+}
+.coach-topbar-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: $faint;
+}
+
+// ====================== 模式切换 ======================
 .mode-tabs {
   display: flex;
   gap: 6px;
-  padding: 12px 16px 0;
+  padding: 10px 16px 6px;
 }
 
 .mode-tab {
@@ -30,7 +47,7 @@
   line-height: 36px;
   text-align: center;
   border-radius: 18px;
-  background: #f3f7f3;
+  background: $surface-2;
   color: $muted;
   font-size: 14px;
 }
@@ -40,9 +57,330 @@
   font-weight: 600;
 }
 
-// 上下文卡
+// ====================== 教练工作台（设计图 1） ======================
+.coach-wb {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 14px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wb-subtitle {
+  display: block;
+  font-size: 12px;
+  color: $faint;
+  padding: 2px 4px 0;
+}
+
+// 选客户卡
+.wb-cust-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 14px 14px;
+  background: $green-soft;
+  border-radius: 14px;
+  border: 1px solid #cfe6d4;
+}
+.wb-cust-card.has-customer {
+  background: #e7f6ee;
+  border-color: #8cd5a4;
+}
+.wb-cust-card.has-customer .wb-cust-title {
+  color: $green-dark;
+}
+.wb-cust-card-left {
+  flex: 1;
+  padding-right: 8px;
+}
+.wb-cust-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: $ink;
+}
+.wb-cust-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: $green-dark;
+  line-height: 1.55;
+}
+.wb-cust-pick {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: $green;
+  color: #fff;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+// 区块标题
+.wb-section {
+  margin-top: 16px;
+}
+.wb-section-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+  padding: 0 4px 8px;
+}
+
+// 10 个问题卡 2 列网格
+.wb-scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wb-scenario {
+  width: calc(50% - 4px);
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 12px;
+  padding: 11px 12px;
+  box-sizing: border-box;
+}
+.wb-scenario-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+}
+.wb-scenario-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: $faint;
+  line-height: 1.5;
+}
+
+// 9 块方法论卡（绿色边框 + 浅绿底）
+.wb-nine-card {
+  margin-top: 16px;
+  background: $green-soft;
+  border: 1px solid #b6e0c1;
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+}
+.wb-nine-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: $green-dark;
+  margin-bottom: 10px;
+}
+.wb-nine-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+.wb-nine-item {
+  width: 33.3333%;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.6;
+  padding: 3px 0;
+  box-sizing: border-box;
+}
+.wb-nine-no {
+  color: $green;
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 18px;
+}
+
+// 参考知识来源
+.wb-knowledge {
+  margin-top: 16px;
+}
+.wb-knowledge-title {
+  display: block;
+  font-size: 13px;
+  color: $muted;
+  padding: 0 4px 8px;
+}
+.wb-knowledge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wb-knowledge-chip {
+  padding: 7px 14px;
+  background: $green-soft;
+  color: $green-dark;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #b6e0c1;
+}
+
+// 直接问输入框
+.wb-quick-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 4px 0;
+}
+.wb-quick-input-wrap {
+  flex: 1;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 18px;
+  padding: 6px 12px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+.wb-quick-input {
+  width: 100%;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.5;
+  min-height: 22px;
+  max-height: 80px;
+}
+.wb-quick-placeholder {
+  color: $faint;
+  font-size: 13px;
+}
+.wb-quick-btn {
+  flex-shrink: 0;
+  padding: 0 18px;
+  height: 36px;
+  line-height: 36px;
+  background: $green;
+  color: #fff;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+// 最近对话
+.wb-recent {
+  margin-top: 16px;
+  padding-bottom: 12px;
+}
+.wb-recent-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px;
+}
+.wb-recent-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+}
+.wb-recent-new {
+  font-size: 12px;
+  color: $green;
+  font-weight: 600;
+}
+
+.wb-recent-empty {
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 12px;
+  padding: 14px;
+  position: relative;
+}
+.wb-recent-empty-text {
+  display: block;
+  font-size: 14px;
+  color: $ink;
+  line-height: 1.5;
+}
+.wb-recent-empty-no {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.wb-recent-scroll {
+  white-space: nowrap;
+}
+.wb-recent-row {
+  display: inline-flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+.wb-recent-card {
+  display: inline-block;
+  width: 180px;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 10px;
+  padding: 10px 12px;
+  vertical-align: top;
+  white-space: normal;
+}
+.wb-recent-card-title {
+  display: block;
+  font-size: 13px;
+  color: $ink;
+  line-height: 1.5;
+  font-weight: 500;
+}
+.wb-recent-card-time {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: $faint;
+}
+
+// ====================== 经典对话（设计图 2） ======================
+.classic-empty-2 {
+  padding: 4px 0 12px;
+}
+.ce2-tip {
+  background: $surface-2;
+  border-radius: 12px;
+  padding: 16px 16px;
+  margin: 12px 16px 0;
+}
+.ce2-tip-text {
+  display: block;
+  font-size: 13px;
+  color: $muted;
+  line-height: 1.75;
+}
+.ce2-bold {
+  font-weight: 700;
+  color: $ink;
+}
+.ce2-spacer {
+  min-height: 220px;
+}
+.ce2-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px 4px;
+  flex-shrink: 0;
+}
+.ce2-suggest-chip {
+  padding: 8px 14px;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 18px;
+  color: $muted;
+  font-size: 13px;
+}
+
+// ====================== 上下文卡 ======================
 .ctx-card {
   margin: 10px 16px 0;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 12px;
+  padding: 12px 14px;
 }
 
 .ctx-top {
@@ -80,12 +418,12 @@
   color: $faint;
 }
 
-// 消息区
+// ====================== 消息区 ======================
 .chat-scroll {
   flex: 1;
   min-height: 0;
 }
-.chat-scroll-inner { padding: 12px 16px 8px; }
+.chat-scroll-inner { padding: 8px 16px 8px; }
 
 .msg-row {
   display: flex;
@@ -170,7 +508,7 @@
   margin-top: 8px;
 }
 
-// 折叠详情
+// ====================== 折叠详情 ======================
 .fold-block {
   margin-top: 8px;
   border-top: 1px solid $line;
@@ -196,7 +534,7 @@
 
 .fold-body {
   margin-top: 6px;
-  background: #f3f7f3;
+  background: $surface-2;
   border-radius: 6px;
   padding: 8px;
 }
@@ -228,7 +566,7 @@
   color: $faint;
 }
 
-// 反馈 chips
+// ====================== 反馈 chips ======================
 .feedback-row {
   display: flex;
   flex-wrap: wrap;
@@ -239,93 +577,20 @@
 .fb-chip {
   padding: 4px 9px;
   border-radius: 14px;
-  background: #f3f7f3;
+  background: $surface-2;
   color: $muted;
   font-size: 11px;
 }
-
-// 空态引导
-.empty-guide {
-  padding-top: 8px;
+.fb-chip.active {
+  background: #e8f5e9;
+  color: #006d37;
+  border: 1px solid #8cd5a4;
+}
+.fb-chip.disabled {
+  opacity: 0.5;
 }
 
-.guide-card {
-  background: $green-soft;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-}
-
-.guide-title {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
-  color: $green-dark;
-  margin-bottom: 4px;
-}
-
-.guide-sub {
-  font-size: 13px;
-  color: $muted;
-  line-height: 1.6;
-}
-
-.guide-grid {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.guide-item {
-  flex: 1;
-  border-radius: 10px;
-  padding: 11px;
-}
-.guide-blue {
-  background: #eaf5fd;
-}
-.guide-green {
-  background: #e9f8f2;
-}
-
-.guide-k {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: $ink;
-  margin-bottom: 5px;
-}
-
-.guide-v {
-  display: block;
-  font-size: 12px;
-  color: $muted;
-  line-height: 1.6;
-  margin-top: 2px;
-}
-
-.guide-risk {
-  border: 1px solid #f5c6c0;
-  background: $red-soft;
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.guide-risk-k {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: $red;
-  margin-bottom: 3px;
-}
-
-.guide-risk-v {
-  font-size: 12px;
-  color: $muted;
-  line-height: 1.6;
-}
-
-// 快捷问题
+// ====================== 快捷问题 ======================
 .quick-scroll {
   white-space: nowrap;
   flex-shrink: 0;
@@ -348,13 +613,19 @@
   white-space: nowrap;
 }
 
-// 输入区
+// ====================== 输入区（固定在底部 tabBar 之上） ======================
 .chat-input-bar {
-  flex-shrink: 0;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  margin: 0 auto;
+  max-width: 430PX;
+  z-index: 50;
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 7px 12px calc(7px + env(safe-area-inset-bottom));
+  padding: 7px 12px;
   background: #fff;
   border-top: 1px solid $line;
 }
@@ -363,7 +634,7 @@
   flex: 1;
   min-height: 38px;
   max-height: 100px;
-  background: #f3f7f3;
+  background: $surface-2;
   border-radius: 12px;
   padding: 9px 12px;
   font-size: 14px;
@@ -400,7 +671,7 @@
   50% { opacity: 0.4; }
 }
 
-// 上下文卡内客户选择
+// ====================== 客户选择弹层 ======================
 .cust-picker {
   margin-top: 8px;
   border: 1px solid $line;
@@ -438,7 +709,7 @@
   font-size: 13px;
 }
 
-// 引用条目（资料快照）
+// ====================== 引用条目 ======================
 .ref-item {
   margin-bottom: 8px;
   border: 1px solid $line;
@@ -473,7 +744,7 @@
   color: $faint;
 }
 
-// 待办建议卡
+// ====================== 待办建议卡 ======================
 .proposal-card {
   margin-top: 8px;
   border: 1px solid #b6e0c1;
@@ -561,7 +832,7 @@
   font-weight: 600;
 }
 
-// 待办编辑面板
+// ====================== 待办编辑面板 ======================
 .proposal-editor {
   margin-top: 8px;
   border: 1px solid #b6e0c1;
@@ -610,7 +881,7 @@
 .pe-chip {
   padding: 5px 11px;
   border-radius: 14px;
-  background: #f3f7f3;
+  background: $surface-2;
   color: $muted;
   font-size: 12px;
   white-space: nowrap;
@@ -653,20 +924,7 @@
   margin-top: 8px;
 }
 
-// 反馈 chips 激活/禁用
-.fb-chip.active {
-  background: #e8f5e9;
-  color: #006d37;
-  border: 1px solid #8cd5a4;
-}
-.fb-chip.disabled {
-  opacity: 0.5;
-}
-
-// 图标行 flex 覆盖（Icon + 文字横排）
-.guide-risk-k { display: flex; align-items: center; gap: 4px; }
-
-// 会话历史 chips（经典对话，对齐 Web ClassicChatClient）
+// ====================== 经典对话：会话历史 chips ======================
 .session-scroll {
   white-space: nowrap;
   flex-shrink: 0;
@@ -674,7 +932,7 @@
 .session-row {
   display: inline-flex;
   gap: 6px;
-  padding: 8px 16px 4px;
+  padding: 6px 16px 4px;
 }
 .session-chip {
   display: inline-flex;
@@ -693,46 +951,15 @@
   color: $green-dark;
   font-weight: 600;
 }
-.session-chip-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 80px;
-}
-.session-del {
-  color: $faint;
-  font-size: 13px;
-  padding: 0 2px;
-  flex-shrink: 0;
-}
-
-// 会话历史 chips（经典对话，对齐 Web ClassicChatClient）
-.session-scroll {
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.session-row {
-  display: inline-flex;
-  gap: 6px;
-  padding: 8px 16px 4px;
-}
-.session-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 5px 10px;
-  border-radius: 15px;
+.session-chip.new-conversation {
   background: #fff;
-  border: 1px solid $line;
-  color: $muted;
-  font-size: 12px;
-}
-.session-chip.active {
-  background: $green-soft;
-  border-color: #b6e0c1;
   color: $green-dark;
+  border: 1px solid $green;
   font-weight: 600;
 }
+.session-chip.new-conversation.active {
+  background: $green-soft;
+}
 .session-chip-text {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -746,10 +973,7 @@
   flex-shrink: 0;
 }
 
-// 输入框让位自定义 tabBar + 经典对话差异化样式
-.chat-page {
-  padding-bottom: calc(90px + env(safe-area-inset-bottom));
-}
+// ====================== 经典对话：客户条 ======================
 .classic-cust-bar {
   display: flex;
   align-items: center;
@@ -768,24 +992,78 @@
 .classic-cust-bar .ccb-sub {
   opacity: 0.7;
 }
-.classic-empty {
-  background: #f3f7f3;
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 13px;
-  color: $muted;
-  line-height: 1.7;
-}
-.classic-empty .ce-bold {
-  font-weight: 600;
+
+// ====================== 通用工具类 ======================
+.ref-field {
+  width: 100%;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  box-sizing: border-box;
   color: $ink;
+  min-height: 38px;
+  line-height: 38px;
 }
-.classic-empty .ce-sub {
-  font-size: 12px;
+.ref-field-placeholder {
   color: $faint;
+  font-size: 13px;
 }
-.classic-empty .ce-link {
-  color: $green-dark;
+
+.ref-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 12px;
   font-weight: 600;
-  margin-left: 2px;
+  border: 1px solid $line;
+  background: $paper;
+  color: $muted;
+}
+.ref-btn-sm-primary {
+  background: $green;
+  color: #fff;
+  border-color: $green;
+}
+.ref-btn-sm-plain {
+  background: $surface-2;
+}
+.ref-btn-sm-ghost {
+  background: transparent;
+  border-color: $line;
+}
+.ref-btn-sm.disabled {
+  opacity: 0.5;
+}
+
+.ref-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.ref-status-green {
+  background: $green-soft;
+  color: $green-dark;
+}
+.ref-status-blue {
+  background: #eaf5fd;
+  color: $blue;
+}
+.ref-status-yellow {
+  background: #fff5e0;
+  color: $yellow;
+}
+.ref-status-red {
+  background: $red-soft;
+  color: $red;
+}
+.ref-status-gray {
+  background: $surface-2;
+  color: $muted;
 }

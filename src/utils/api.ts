@@ -73,6 +73,8 @@ export const customerApi = {
   // 客户合并：把 sourceId 合并进 targetId（清理占位客户）
   merge: (targetId: string, sourceId: string) =>
     request<any>('/api/customers/merge', { method: 'POST', body: { targetId, sourceId } }),
+  // 删除客户（临时/无意义客户）
+  delete: (id: string) => request<any>(`/api/customers/${id}`, { method: 'DELETE' }),
   // 记忆项确认/修正/拒绝（客户档案直连）
   confirmMemory: (customerId: string, memoryId: string, data: { confirmed: boolean; correctedValue?: string }) =>
     request<any>(`/api/memory-confirmations/customers/${customerId}/memories/${memoryId}/confirm`, {

@@ -15,7 +15,6 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding-right: 55px;
 }
 
 .hero-date {
@@ -30,64 +29,6 @@
   font-weight: 700;
   color: $ink;
   line-height: 1.4;
-}
-
-.hero-tags {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.hero-tag {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 5px 11px;
-  border-radius: 14px;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid transparent;
-}
-
-.tag-ok {
-  color: $green-dark;
-  border-color: rgba(0, 132, 72, 0.2);
-  background: rgba(255, 255, 255, 0.7);
-}
-.tag-ok .tag-num { color: $green-dark; }
-
-.tag-risk {
-  color: #b14433;
-  border-color: rgba(217, 75, 61, 0.22);
-  background: rgba(255, 255, 255, 0.7);
-}
-.tag-risk .tag-num { color: $red; }
-
-.tag-num {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-.tag-lbl {
-  font-size: 12px;
-  color: inherit;
-  opacity: 0.85;
-}
-
-.hero-mic {
-  position: absolute;
-  top: 20px;
-  right: 16px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: $green;
-  color: #fff;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 7px 14px rgba(0, 109, 55, 0.24);
 }
 
 .home-search {
@@ -205,7 +146,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin: 0 16px 12px;
 }
 
 .ai-tabs .tool-btn {
@@ -229,12 +170,14 @@
 
 .home-skeleton {
   height: 130px;
-  margin-bottom: 14px;
+  margin: 0 16px 14px;
 }
 
 // 任务卡
 .task-card {
   padding: 14px;
+  margin-left: 16px;
+  margin-right: 16px;
 }
 
 .task-head {
@@ -369,6 +312,18 @@
 // 客户机会卡
 .opp-card {
   padding: 14px;
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+// 首页内章节标题与空态同样对齐卡片左右边距
+.home-page .section-title {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+.home-page .ref-empty {
+  margin-left: 16px;
+  margin-right: 16px;
 }
 
 .opp-head {

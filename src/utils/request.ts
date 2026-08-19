@@ -52,15 +52,21 @@ export async function request<T = any>(
 
     const json = res.data as any
 
-    if (res.statusCode === 401 || res.statusCode === 403) {
-      // 立即清除失效 token，否则登录页守卫 isLoggedIn() 仍为 true 会跳回首页，
-      // 首页再请求又 401/403 → 造成"页面不断刷新 + 反复弹未授权"死循环。
+    if (res.statusCode === 401) {
+      // 登录已失效：清除 token 并跳登录页（否则登录页守卫 isLoggedIn() 仍为 true
+      // 会跳回首页，首页再请求又 401 → 造成"页面不断刷新 + 反复弹未授权"死循环）。
       logout()
       if (autoRedirectLogin) {
         Taro.showToast({ title: '登录已失效，请重新登录', icon: 'none' })
         Taro.reLaunch({ url: '/pages/login/index' })
       }
       return { ok: false, error: json?.message || '未授权', code: res.statusCode }
+    }
+
+    if (res.statusCode === 403) {
+      // 已登录但无操作权限（如普通员工尝试合并客户）：不清 token、不跳登录，
+      // 仅把后端的具体提示返回给调用方展示。
+      return { ok: false, error: json?.message || '无权限执行该操作', code: res.statusCode }
     }
 
     if (json && json.code === 200) {

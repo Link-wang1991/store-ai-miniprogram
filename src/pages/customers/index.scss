@@ -145,11 +145,91 @@
   font-size: 12px;
   color: $faint;
 }
+.foot-k-follow {
+  color: $green-dark;
+  font-weight: 600;
+}
 
 .ask-link {
   display: inline-block;
-  margin-top: 10px;
   color: $green;
   font-size: 13px;
   font-weight: 600;
+}
+.ask-link.disabled {
+  color: $faint;
+  font-weight: 400;
+}
+
+// 客户操作区（问AI教练 + 绑定/编辑/删除）
+.cust-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid $line;
+}
+.cust-manage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cust-op {
+  font-size: 12px;
+  color: $muted;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 13px;
+  background: $surface-2;
+}
+.cust-op-danger {
+  color: $red;
+}
+
+// 内联编辑面板
+.cust-edit {
+  margin-top: 12px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: $surface-2;
+  padding: 12px;
+}
+.ce-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ink;
+  margin-bottom: 10px;
+}
+.ce-field {
+  margin-bottom: 9px;
+}
+.ce-k {
+  display: block;
+  font-size: 12px;
+  color: $muted;
+  margin-bottom: 4px;
+}
+.ce-input {
+  width: 100%;
+  height: 38px;
+  line-height: 38px;
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: $ink;
+  box-sizing: border-box;
+}
+.ce-picker {
+  display: flex;
+  align-items: center;
+}
+.ce-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
