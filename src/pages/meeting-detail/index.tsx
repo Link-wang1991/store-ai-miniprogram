@@ -421,28 +421,78 @@ export default function MeetingDetail() {
     setAudioState('loading')
     try {
       const token = getToken()
+      const audioUrl = meetingApi.audioUrl(id)
+      console.warn('[录音播放] 开始下载: ', audioUrl)
       const dl = await Taro.downloadFile({
-        url: meetingApi.audioUrl(id),
+        url: audioUrl,
         header: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (dl.statusCode !== 200) {
         Taro.showToast({ title: '录音下载失败', icon: 'none' })
         setAudioState('idle')
+        console.warn('[录音播放] 下载失败 status=', dl.statusCode)
         return
+      }
+      console.warn('[录音播放] 下载成功 tempFilePath=', dl.tempFilePath)
+      // 诊断：从响应头确认实际返回的音频格式
+      const ctype = (dl.header && (dl.header['content-type'] || dl.header['Content-Type'])) as string | undefined
+      const ext = (dl.tempFilePath || '').split('.').pop()?.toLowerCase()
+      console.warn('[录音播放] content-type=', ctype, '临时文件扩展名=', ext)
+      // 微信 InnerAudioContext 不支持 webm/ogg：格式不对时直接提示，避免"能下载但无声"的假象
+      if (ctype && (ctype.includes('webm') || ctype.includes('ogg')) || ext === 'webm' || ext === 'ogg') {
+        setAudioState('idle')
+        Taro.showToast({ title: '录音格式不支持播放，请重新录制后上传', icon: 'none', duration: 3000 })
+        return
+      }
+      // 关键：downloadFile 的 tempFilePath 是真机的 http://tmp/...，部分基础库/机型作为
+      // InnerAudioContext.src 不稳定（能下载但解码播放失败）。用文件系统转成 wxfile:// 本地路径更稳。
+      let playSrc = dl.tempFilePath
+      try {
+        const fs = Taro.getFileSystemManager()
+        const saved = await new Promise<{ ok: boolean; path?: string }>((resolve) => {
+          fs.saveFile({
+            tempFilePath: dl.tempFilePath,
+            success: (r) => resolve({ ok: true, path: r.savedFilePath }),
+            fail: () => resolve({ ok: false }),
+          })
+        })
+        if (saved.ok && saved.path) {
+          playSrc = saved.path
+          console.warn('[录音播放] 已转本地路径 savedFilePath=', playSrc)
+        } else {
+          console.warn('[录音播放] saveFile 失败，沿用 tempFilePath')
+        }
+      } catch (e) {
+        console.warn('[录音播放] saveFile 异常，沿用 tempFilePath', e)
       }
       const ctx = Taro.createInnerAudioContext()
       audioRef.current = ctx
-      ctx.src = dl.tempFilePath
-      ctx.onError(() => {
+      // 关键：部分基础库需要 autoplay 才会自动开始播放
+      ctx.autoplay = true
+      ctx.obeyMuteSwitch = false
+      ctx.volume = 1
+      ctx.src = playSrc
+      ctx.onError((e) => {
         setAudioState('idle')
+        const msg = e && e.errMsg ? e.errMsg : '录音播放失败'
         Taro.showToast({ title: '录音播放失败', icon: 'none' })
+        console.warn('[录音播放] InnerAudioContext 错误:', msg, 'src=', playSrc)
+      })
+      ctx.onCanplay(() => {
+        console.warn('[录音播放] onCanplay 触发, duration=', ctx.duration, 'paused=', ctx.paused)
+        // 确保可播放后再开始
+        ctx.play()
       })
       ctx.onEnded(() => {
+        console.warn('[录音播放] onEnded')
         setAudioState('idle')
         setAudioProgress(100)
         setAudioProgressText(fmtSec(ctx.duration || 0))
       })
-      ctx.onPlay(() => setAudioState('playing'))
+      ctx.onPlay(() => {
+        console.warn('[录音播放] onPlay 触发, duration=', ctx.duration, 'paused=', ctx.paused, 'volume=', ctx.volume)
+        setAudioState('playing')
+      })
       ctx.onStop(() => {
         setAudioState('idle')
       })
@@ -453,7 +503,17 @@ export default function MeetingDetail() {
           setAudioProgressText(fmtSec(ctx.currentTime))
         }
       })
-      ctx.play()
+      // 兜底：onCanplay 不触发时也调用一次 play
+      setTimeout(() => {
+        if (audioRef.current) {
+          try {
+            console.warn('[录音播放] setTimeout 兜底 play()')
+            audioRef.current.play()
+          } catch (e) {
+            console.warn('[录音播放] 兜底 play 异常', e)
+          }
+        }
+      }, 300)
     } catch {
       setAudioState('idle')
       Taro.showToast({ title: '录音播放失败', icon: 'none' })
