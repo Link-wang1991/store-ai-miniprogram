@@ -36,7 +36,6 @@ export default function Home() {
   const [data, setData] = useState<HomeOverview | null>(null)
   const [tab, setTab] = useState('today')
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [toast, setToast] = useState('')
   const user = getUserInfo()
 
   useDidShow(() => {
@@ -59,15 +58,24 @@ export default function Home() {
     setLoading(false)
   }
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(''), 2800)
-  }
-
   const tasks: any[] = data?.tasks || []
   const customers: any[] = data?.customers || []
 
-  const todayCustomers = customers.filter((c) => ['today', '今日到店'].includes(c.pool))
+  // 今日到店客户：按预约/签到/到店记录（pool=today 或今日到店）
+  const todayVisitors = customers.filter((c) => ['today', '今日到店'].includes(c.pool))
+  // 今日重点客户：按价值/风险/到期跟进规则计算，与"今日到店"口径区分
+  const keyCustomers = customers.filter((c) => {
+    if (['risk', '重点'].includes(c.pool)) return true
+    if (String(c.stage || '').includes('风险') || String(c.stage || '').includes('流失')) return true
+    if (c.next_follow_at) {
+      const d = new Date(c.next_follow_at)
+      const now = new Date()
+      const isToday = d.toDateString() === now.toDateString()
+      const isOverdue = d.getTime() < now.getTime()
+      if (isToday || isOverdue) return true
+    }
+    return false
+  })
   const todayTasks = tasks.filter(
     (t) => t.due_at && new Date(t.due_at).toDateString() === new Date().toDateString()
   )
@@ -85,7 +93,7 @@ export default function Home() {
     openCoach(q ? { question: q } : {})
   }
 
-  function goTasks(filter?: 'pending' | 'risk') {
+  function goTasks(filter?: 'due_today' | 'pending' | 'risk') {
     Taro.navigateTo({ url: `/pages/tasks/index${filter ? `?filter=${filter}` : ''}` })
   }
 
@@ -98,7 +106,7 @@ export default function Home() {
             <Text className="hero-date">{fmtCnDate()}</Text>
             <Text className="hero-greet">早上好，{user?.name || '伙伴'}</Text>
             <View className="hero-tags">
-              <View className="hero-tag tag-ok" onClick={() => goTasks('pending')}>
+              <View className="hero-tag tag-ok" onClick={() => goTasks('due_today')}>
                 <Text className="tag-num">{todayTasks.length}</Text>
                 <Text className="tag-lbl">项跟进</Text>
               </View>
@@ -124,25 +132,25 @@ export default function Home() {
 
       {/* 4 统计卡 */}
       <View className="summary-grid">
-        <View className="sum-card" onClick={() => openCustomers('today')}>
+        <View className="sum-card" onClick={() => openCustomers('all')}>
           <View className="sum-ico ico-green"><Icon svg={ICN.trophy('#008448')} size={34} /></View>
           <View className="sum-main">
-            <Text className="sum-num">{todayCustomers.length} 位</Text>
-            <Text className="sum-desc">需要优先处理</Text>
+            <Text className="sum-num">{keyCustomers.length} 位</Text>
+            <Text className="sum-desc">今日重点客户</Text>
           </View>
         </View>
-        <View className="sum-card" onClick={() => goTasks('pending')}>
+        <View className="sum-card" onClick={() => goTasks('due_today')}>
           <View className="sum-ico ico-yellow"><Icon svg={ICN.clock('#c88400')} size={34} /></View>
           <View className="sum-main">
             <Text className="sum-num">{todayTasks.length} 个</Text>
-            <Text className="sum-desc">动作待完成</Text>
+            <Text className="sum-desc">今日跟进</Text>
           </View>
         </View>
         <View className="sum-card" onClick={() => openCustomers('today')}>
           <View className="sum-ico ico-blue"><Icon svg={ICN.home('#335cff')} size={34} /></View>
           <View className="sum-main">
-            <Text className="sum-num">{todayCustomers.length} 位</Text>
-            <Text className="sum-desc">需服务闭环</Text>
+            <Text className="sum-num">{todayVisitors.length} 位</Text>
+            <Text className="sum-desc">今日到店客户</Text>
           </View>
         </View>
         <View className="sum-card" onClick={() => Taro.showToast({ title: '经验审核开发中', icon: 'none' })}>
@@ -237,8 +245,11 @@ export default function Home() {
               <View className="ref-btn-sm ref-btn-sm-primary action-do" onClick={() => goChat(t.title || t.content)}>
                 开始执行
               </View>
-              <View className="ref-btn-sm ref-btn-sm-plain" onClick={() => showToast('已稍后提醒')}>
-                稍后提醒
+              <View
+                className="ref-btn-sm ref-btn-sm-plain"
+                onClick={() => goTasks('due_today')}
+              >
+                查看任务
               </View>
             </View>
           </View>
@@ -273,8 +284,6 @@ export default function Home() {
       <View className="fab" onClick={() => goChat()}>
         <Icon svg={ICN.plus('#fff')} size={44} />
       </View>
-
-      {toast ? <View className="ref-toast">{toast}</View> : null}
     </View>
   )
 }

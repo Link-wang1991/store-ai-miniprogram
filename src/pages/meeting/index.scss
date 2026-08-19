@@ -95,6 +95,97 @@
   font-size: 13px;
 }
 
+// 同名客户识别
+.cust-picker-wrap {
+  margin-top: 6px;
+}
+
+.identify-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.identify-input {
+  flex: 1;
+  height: 36px;
+  background: #f3f7f3;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13px;
+  border: 1px solid $line;
+}
+
+.identify-btn {
+  padding: 0 16px;
+  height: 36px;
+  line-height: 36px;
+  border-radius: 8px;
+  background: $green;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.identify-list {
+  max-height: 220px;
+  margin-bottom: 8px;
+  border: 1px solid #d7efe0;
+  border-radius: 8px;
+  background: #f8fbf8;
+}
+
+.identify-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid $line;
+}
+.identify-item:last-child { border-bottom: none; }
+
+.identify-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.identify-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.identify-phone {
+  font-size: 11px;
+  color: $faint;
+  flex: 1;
+}
+
+.identify-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: $muted;
+}
+
+.identify-summary {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: $green-dark;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.picker-hint {
+  display: block;
+  padding: 8px 12px 0;
+  font-size: 11px;
+  color: $faint;
+}
+
 .scene-label {
   margin: 12px 0 7px;
   font-size: 13px;

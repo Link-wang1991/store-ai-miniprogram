@@ -3,6 +3,7 @@ import { View, Text, Input, ScrollView } from '@tarojs/components'
 import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 import { meetingApi, customerApi } from '@/utils/api'
 import { isLoggedIn } from '@/utils/auth'
+import { fmtDate } from '@/utils/format'
 import { sceneLabel, MEETING_SCENES } from '@/utils/scenes'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
@@ -43,10 +44,15 @@ export default function Meeting() {
   const [scene, setScene] = useState('')
   const [consent, setConsent] = useState(false)
   const [showCustPicker, setShowCustPicker] = useState(false)
+  // 同名客户识别（到店客户消歧）
+  const [identifyKw, setIdentifyKw] = useState('')
+  const [identifyList, setIdentifyList] = useState<any[]>([])
+  const [identifyLoading, setIdentifyLoading] = useState(false)
 
   // 录音状态
   const recorderRef = useRef<any>(null)
   const timerRef = useRef<any>(null)
+  const durationRef = useRef(0) // 记录累计录制秒数，上传时传给后端
   const [recording, setRecording] = useState(false)
   const [paused, setPaused] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -124,36 +130,62 @@ export default function Meeting() {
       .then((s: any) => {
         const granted = s?.authSetting?.['scope.record']
         if (granted === false) {
+          // 已被用户拒绝过：引导去设置开启
           Taro.hideLoading()
           Taro.showModal({
             title: '需要麦克风权限',
-            content: '请在设置中允许使用麦克风后重试',
+            content: '录音需要麦克风权限，用于记录会谈内容并交给 AI 分析。请在设置中允许使用麦克风。',
             confirmText: '去设置',
+            cancelText: '暂不',
             success: (r) => {
               if (r.confirm) Taro.openSetting()
             },
           })
           return null
         }
-        return authorize()
+        if (granted === true) {
+          // 已授权过：直接开始
+          return authorize()
+        }
+        // 首次使用（从未询问）：先说明用途，用户确认后再触发系统授权弹窗
+        return new Promise<void>((resolve, reject) => {
+          Taro.showModal({
+            title: '使用麦克风',
+            content: '录音用于记录与客户的会谈内容，并经语音识别生成逐字稿和 AI 分析。是否允许使用麦克风？',
+            confirmText: '允许',
+            cancelText: '暂不',
+            confirmColor: '#008448',
+            success: (r) => {
+              if (r.confirm) resolve()
+              else reject(new Error('auth_canceled'))
+            },
+            fail: () => reject(new Error('auth_canceled')),
+          })
+        }).then(() => authorize())
       })
       .then(() => {
         Taro.hideLoading()
         const rm = Taro.getRecorderManager()
         recorderRef.current = rm
+        const startTimer = () => {
+          if (timerRef.current) clearInterval(timerRef.current)
+          durationRef.current = 0
+          setSeconds(0)
+          timerRef.current = setInterval(() => {
+            durationRef.current += 1
+            setSeconds(durationRef.current)
+          }, 1000)
+        }
         rm.onStart(() => {
           setRecording(true)
           setPaused(false)
-          setSeconds(0)
-          if (timerRef.current) clearInterval(timerRef.current)
-          timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000)
+          startTimer()
         })
         rm.onStop((res) => {
           setRecording(false)
           setPaused(false)
-          setSeconds(0)
           if (timerRef.current) clearInterval(timerRef.current)
-          if (res.tempFilePath) submitAudio(res.tempFilePath)
+          if (res.tempFilePath) submitAudio(res.tempFilePath, durationRef.current)
         })
         rm.onError((err) => {
           setRecording(false)
@@ -171,9 +203,13 @@ export default function Meeting() {
           // 只等回调会导致点击后 UI 无任何变化，看起来"没反应"）
           setRecording(true)
           setPaused(false)
-          setSeconds(0)
           if (timerRef.current) clearInterval(timerRef.current)
-          timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000)
+          durationRef.current = 0
+          setSeconds(0)
+          timerRef.current = setInterval(() => {
+            durationRef.current += 1
+            setSeconds(durationRef.current)
+          }, 1000)
           Taro.showToast({ title: '录音中…', icon: 'none' })
         } catch (e) {
           setRecording(false)
@@ -182,8 +218,25 @@ export default function Meeting() {
       })
       .catch((err) => {
         Taro.hideLoading()
-        const msg = err?.message === 'authorize_timeout' ? '未获得麦克风授权' : '需要麦克风权限'
-        Taro.showToast({ title: msg, icon: 'none' })
+        const msg = err?.message
+        if (msg === 'auth_canceled') {
+          Taro.showToast({ title: '已取消录音', icon: 'none' })
+        } else if (msg === 'authorize_timeout') {
+          Taro.showToast({ title: '未获得麦克风授权', icon: 'none' })
+        } else if (msg && msg.indexOf('deny') >= 0) {
+          // 用户在系统弹窗里拒绝了授权：引导去设置开启
+          Taro.showModal({
+            title: '需要麦克风权限',
+            content: '录音需要麦克风权限。请在设置中允许使用麦克风后再试。',
+            confirmText: '去设置',
+            cancelText: '暂不',
+            success: (r) => {
+              if (r.confirm) Taro.openSetting()
+            },
+          })
+        } else {
+          Taro.showToast({ title: '需要麦克风权限', icon: 'none' })
+        }
       })
   }
 
@@ -204,7 +257,7 @@ export default function Meeting() {
     if (rm) rm.stop()
   }
 
-  async function submitAudio(path: string) {
+  async function submitAudio(path: string, durationSec = 0) {
     const body: any = { scene: scene || scenes[0].code, consent }
     if (custType === 'existing') body.customerId = custId
     else body.customerName = custName || `新客户 ${fmtNow()}`
@@ -217,7 +270,7 @@ export default function Meeting() {
     }
     const id = r.data?.id || r.data?.meetingId
     if (id) {
-      const up = await meetingApi.uploadAudio(id, path)
+      const up = await meetingApi.uploadAudio(id, path, durationSec)
       Taro.hideLoading()
       if (!up.ok) {
         Taro.showToast({ title: up.error || '上传失败', icon: 'none' })
@@ -271,6 +324,20 @@ export default function Meeting() {
     setShowCustPicker(false)
   }
 
+  // 到店识别：按手机号/姓名查找客户，展示负责人/到店/最近会谈等消歧信息
+  async function doIdentify() {
+    const kw = identifyKw.trim()
+    if (!kw) {
+      Taro.showToast({ title: '请输入手机号或姓名', icon: 'none' })
+      return
+    }
+    setIdentifyLoading(true)
+    const r = await customerApi.identify(kw)
+    setIdentifyLoading(false)
+    if (r.ok) setIdentifyList(r.data || [])
+    else setIdentifyList([])
+  }
+
   async function delMeeting(m: any) {
     const modal = await Taro.showModal({
       title: '删除会谈',
@@ -313,18 +380,57 @@ export default function Meeting() {
           </View>
         )}
         {showCustPicker && custType === 'existing' ? (
-          <ScrollView scrollY className="cust-picker">
-            {customers.length === 0 ? (
-              <Text className="picker-empty">暂无客户</Text>
-            ) : (
-              customers.map((c) => (
-                <View key={c.id} className="picker-item" onClick={() => selectCust(c)}>
-                  {c.name}
-                  <Text className="picker-sub">尾号 {String(c.phone || '').slice(-4)}</Text>
-                </View>
-              ))
-            )}
-          </ScrollView>
+          <View className="cust-picker-wrap">
+            {/* 同名客户识别：输入手机号/姓名精确找到目标客户，避免选错 */}
+            <View className="identify-bar">
+              <Input
+                className="identify-input"
+                placeholder="输手机号/姓名识别客户"
+                placeholderClass="ref-field-placeholder"
+                value={identifyKw}
+                onInput={(e) => {
+                  setIdentifyKw(e.detail.value)
+                  if (!e.detail.value.trim()) setIdentifyList([])
+                }}
+                confirmType="search"
+                onConfirm={doIdentify}
+              />
+              <View className="identify-btn" onClick={doIdentify}>
+                {identifyLoading ? '识别中' : '识别'}
+              </View>
+            </View>
+            {identifyList.length > 0 ? (
+              <ScrollView scrollY className="identify-list">
+                {identifyList.map((c) => (
+                  <View key={c.id} className="identify-item" onClick={() => selectCust(c)}>
+                    <View className="identify-head">
+                      <Text className="identify-name">{c.name}</Text>
+                      <Text className="identify-phone">尾号 {String(c.phone || '').slice(-4)}</Text>
+                      {c.checked_in_today ? <Text className="ref-status ref-status-green">今日已到</Text> : null}
+                    </View>
+                    {c.assigned_to_name ? <Text className="identify-meta">负责人：{c.assigned_to_name}</Text> : null}
+                    {c.last_checkin_at ? <Text className="identify-meta">最近到店：{fmtDate(c.last_checkin_at)}</Text> : null}
+                    {c.latest_meeting_summary ? (
+                      <Text className="identify-summary">最近会谈：{c.latest_meeting_summary}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </ScrollView>
+            ) : null}
+            <ScrollView scrollY className="cust-picker">
+              <Text className="picker-hint">或从列表选择</Text>
+              {customers.length === 0 ? (
+                <Text className="picker-empty">暂无客户</Text>
+              ) : (
+                customers.map((c) => (
+                  <View key={c.id} className="picker-item" onClick={() => selectCust(c)}>
+                    {c.name}
+                    <Text className="picker-sub">尾号 {String(c.phone || '').slice(-4)}</Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
         ) : null}
 
         <View className="scene-label">会谈场景</View>

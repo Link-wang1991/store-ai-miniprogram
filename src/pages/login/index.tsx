@@ -23,7 +23,6 @@ export default function Login() {
 
   // 微信一键登录 / 绑定分支
   const [needBind, setNeedBind] = useState(false)
-  const [wxCode, setWxCode] = useState('')
   const [bindPhone, setBindPhone] = useState('')
   const [bindCode, setBindCode] = useState('')
   const [bindCountdown, setBindCountdown] = useState(0)
@@ -135,7 +134,6 @@ export default function Login() {
         return
       }
       if (r.data.needBind) {
-        setWxCode(login.code)
         setNeedBind(true)
         return
       }
@@ -166,7 +164,14 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      const r = await authApi.wxBindPhone(wxCode, bindPhone.trim(), bindCode.trim())
+      // wx.login 的 code 是一次性的：首次 onWxLogin 时已被 wx-login 消费过，
+      // 这里必须重新 Taro.login() 拿一个新 code，否则后端 code2session 报 "code been used"。
+      const login = await Taro.login()
+      if (!login.code) {
+        setError('微信登录状态已失效，请返回重新点击微信登录')
+        return
+      }
+      const r = await authApi.wxBindPhone(login.code, bindPhone.trim(), bindCode.trim())
       if (!r.ok || !r.data) {
         setError(r.error || '绑定失败')
         return

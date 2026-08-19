@@ -76,11 +76,22 @@ export default function Me() {
       </View>
 
       {isMgmt ? (
-        <View className="ref-card mgmt-card" onClick={() => Taro.showToast({ title: '管理后台开发中', icon: 'none' })}>
+        <View
+          className="ref-card mgmt-card"
+          onClick={() =>
+            Taro.showModal({
+              title: '管理后台即将开放',
+              content: '员工、知识库、权限、数据看板等管理能力建议先在 Web 管理端使用，小程序轻量管理入口正在建设中。',
+              showCancel: false,
+              confirmText: '知道了',
+              confirmColor: '#008448',
+            })
+          }
+        >
           <View className="mgmt-ico"><Icon svg={ICN.cog('#008448')} size={40} /></View>
           <View className="mgmt-main">
             <Text className="mgmt-title">管理后台</Text>
-            <Text className="mgmt-sub">员工、知识库、权限、数据看板</Text>
+            <Text className="mgmt-sub">员工、知识库、权限、数据看板 · 即将开放</Text>
           </View>
           <Text className="mgmt-arrow">›</Text>
         </View>

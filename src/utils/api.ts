@@ -64,6 +64,21 @@ export const customerApi = {
   detail: (id: string) => request<any>(`/api/customers/${id}`),
   update: (id: string, data: any) =>
     request<any>(`/api/customers/${id}/update`, { method: 'POST', body: data }),
+  // 到店签到
+  checkin: (id: string, note?: string) =>
+    request<any>(`/api/customers/${id}/checkin`, { method: 'POST', body: note ? { note } : undefined }),
+  // 到店识别：按手机号/姓名查找客户
+  identify: (keyword: string) =>
+    request<any[]>(`/api/customers/identify?keyword=${encodeURIComponent(keyword)}`),
+  // 客户合并：把 sourceId 合并进 targetId（清理占位客户）
+  merge: (targetId: string, sourceId: string) =>
+    request<any>('/api/customers/merge', { method: 'POST', body: { targetId, sourceId } }),
+  // 记忆项确认/修正/拒绝（客户档案直连）
+  confirmMemory: (customerId: string, memoryId: string, data: { confirmed: boolean; correctedValue?: string }) =>
+    request<any>(`/api/memory-confirmations/customers/${customerId}/memories/${memoryId}/confirm`, {
+      method: 'POST',
+      body: data,
+    }),
 }
 
 // -- 任务 --
@@ -72,6 +87,40 @@ export const taskApi = {
     request<any[]>(`/api/tasks${status ? `?status=${status}` : ''}`),
   complete: (id: string, outcome: string, note?: string) =>
     request(`/api/tasks/${id}/complete`, { method: 'POST', body: { outcome, note } }),
+  // 更新状态：todo(待处理) / doing(执行中) / canceled(取消)
+  updateStatus: (id: string, status: string) =>
+    request(`/api/tasks/${id}/status?status=${encodeURIComponent(status)}`, { method: 'POST' }),
+  // 任务延期：把截止时间改到新时间
+  defer: (id: string, newDueAt: string) =>
+    request(`/api/tasks/${id}/defer`, { method: 'POST', body: { newDueAt } }),
+  // 任务指派/转交
+  assign: (id: string, assignedTo: string) =>
+    request(`/api/tasks/${id}/assign`, { method: 'POST', body: { assignedTo } }),
+  // 可指派的员工候选
+  assignees: () => request<any[]>('/api/tasks/assignees'),
+  // 证据附件
+  listAttachments: (id: string) => request<any[]>(`/api/tasks/${id}/attachments`),
+  uploadAttachment: (id: string, filePath: string) =>
+    new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {
+      const token = getToken()
+      Taro.uploadFile({
+        url: `${API_BASE_URL}/api/tasks/${id}/attachments`,
+        filePath,
+        name: 'file',
+        header: token ? { Authorization: `Bearer ${token}` } : {},
+        success: (res) => {
+          try {
+            const j = JSON.parse(res.data)
+            resolve(j.code === 200 ? { ok: true, data: j.data } : { ok: false, error: j.message || '上传失败' })
+          } catch {
+            resolve({ ok: res.statusCode === 200, data: res.data })
+          }
+        },
+        fail: () => resolve({ ok: false, error: '上传网络错误' }),
+      })
+    }),
+  deleteAttachment: (id: string, attachmentId: string) =>
+    request(`/api/tasks/${id}/attachments/${attachmentId}`, { method: 'DELETE' }),
 }
 
 // -- 会谈 --
@@ -83,6 +132,8 @@ export const meetingApi = {
     request('/api/meetings', { method: 'POST', body: data }),
   delete: (id: string) => request(`/api/meetings/${id}/delete`, { method: 'POST' }),
   detail: (id: string) => request<any>(`/api/meetings/${id}`),
+  // 编辑会谈：绑定已有客户 / 改客户名等
+  update: (id: string, data: any) => request<any>(`/api/meetings/${id}`, { method: 'PATCH', body: data }),
   analysis: (id: string) => request<any>(`/api/meetings/${id}/analysis`),
   transcripts: (id: string) => request<any[]>(`/api/meetings/${id}/transcripts`),
   // 修订转写句子 / 设置说话人身份（与 Web 端 app/meeting/[id] 逻辑一致）
@@ -96,14 +147,29 @@ export const meetingApi = {
   diagnostics: (id: string) => request<any>(`/api/meetings/${id}/diagnostics`),
   retryTranscription: (id: string) => request(`/api/meetings/${id}/retry-transcription`, { method: 'POST' }),
   reanalyze: (id: string) => request(`/api/meetings/${id}/reanalyze`, { method: 'POST' }),
-  // 上传录音（multipart）
-  uploadAudio: (id: string, filePath: string) =>
+  // 行动确认：转写修订后选择"采用新计划"或"保留原计划"
+  actionReconciliation: (id: string, decision: 'apply' | 'keep') =>
+    request<any>(`/api/meetings/${id}/action-reconciliation`, {
+      method: 'POST',
+      body: { decision },
+    }),
+  // 质量复核（店长/老板）：对自动评分做人工校准
+  qualityReview: (id: string, data: { score: number; note?: string; reason_codes?: string[] }) =>
+    request<any>(`/api/meetings/${id}/quality-review`, {
+      method: 'POST',
+      body: { score: data.score, note: data.note, reason_codes: data.reason_codes },
+    }),
+  // 原始录音播放地址（流式，走受控接口）
+  audioUrl: (id: string) => `${API_BASE_URL}/api/meetings/${id}/audio`,
+  // 上传录音（multipart）。duration 单位为秒，用于会谈详情/统计口径。
+  uploadAudio: (id: string, filePath: string, duration = 0) =>
     new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {
       const token = getToken()
       Taro.uploadFile({
         url: `${API_BASE_URL}/api/meetings/${id}/audio`,
         filePath,
         name: 'file',
+        formData: duration > 0 ? { duration: String(duration) } : undefined,
         header: token ? { Authorization: `Bearer ${token}` } : {},
         success: (res) => {
           try {
@@ -203,6 +269,15 @@ export const knowledgeApi = {
     request<any[]>(`/api/knowledge${category ? `?category=${category}` : ''}`),
   search: (q: string, topN = 5) =>
     request<any[]>(`/api/knowledge/search?q=${encodeURIComponent(q)}&topN=${topN}`),
+}
+
+// -- 经验沉淀（优秀会谈提交审核） --
+export const experienceReviewApi = {
+  submit: (data: { meetingId: string; title: string; content: string; category?: string }) =>
+    request<any>('/api/experience-reviews/submit', {
+      method: 'POST',
+      body: { meetingId: data.meetingId, title: data.title, content: data.content, category: data.category || '会谈沉淀' },
+    }),
 }
 
 // -- 平台管理（超管） --

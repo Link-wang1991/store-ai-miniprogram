@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { View, Text, Input } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { customerApi } from '@/utils/api'
-import { isLoggedIn } from '@/utils/auth'
+import { isLoggedIn, getUserInfo } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
 import { openCoach } from '@/utils/navigation'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
+import { showEditableModal } from '@/utils/ui'
 import './index.scss'
 
 export default function CustomerDetail() {
@@ -15,6 +16,9 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true)
   const [c, setC] = useState<any>(null)
   const [q, setQ] = useState('')
+
+  const user = getUserInfo()
+  const isAdmin = !!user && ['owner', 'admin', 'manager'].includes(user.role)
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -40,6 +44,135 @@ export default function CustomerDetail() {
   function call() {
     if (c?.phone) Taro.makePhoneCall({ phoneNumber: String(c.phone) })
     else Taro.showToast({ title: '暂无手机号', icon: 'none' })
+  }
+
+  // 客户合并：把其他客户（如"新客户 xx"占位档案）合并进当前客户
+  async function mergeCustomer() {
+    const res = await showEditableModal({
+      title: '合并进来的客户',
+      placeholderText: '输入要合并的客户手机号/姓名',
+      confirmColor: '#008448',
+    })
+    if (!res.confirm) return
+    const kw = res.content?.trim()
+    if (!kw) return
+    const r = await customerApi.identify(kw)
+    const list = r.ok ? (r.data || []) : []
+    // 排除当前客户自己
+    const candidates = list.filter((c: any) => c.id !== id)
+    if (candidates.length === 0) {
+      Taro.showToast({ title: '未找到可合并的客户', icon: 'none' })
+      return
+    }
+    const sel = await Taro.showActionSheet({
+      itemList: candidates.map((c: any) => `${c.name}（尾号${String(c.phone || '').slice(-4)}）`),
+      itemColor: '#008448',
+    })
+    if (sel.errMsg && !sel.errMsg.includes('ok')) return
+    const source = candidates[sel.tapIndex]
+    if (!source) return
+    const confirm = await Taro.showModal({
+      title: '确认合并',
+      content: `将把 ${source.name} 的会谈、任务、记忆和时间线并入「${c?.name || '当前客户'}」，并删除 ${source.name} 档案。此操作不可撤销。`,
+      confirmText: '确认合并',
+      confirmColor: '#d94b3d',
+    })
+    if (!confirm.confirm) return
+    const m = await customerApi.merge(id, source.id)
+    if (m.ok) {
+      Taro.showToast({ title: '已合并客户', icon: 'success' })
+      load()
+    } else {
+      Taro.showToast({ title: m.error || '合并失败', icon: 'none' })
+    }
+  }
+
+  // 记忆确认/修正/拒绝（客户档案直连）
+  async function handleMemory(m: any) {
+    const keyLabel = m.key || '记忆'
+    const sel = await Taro.showActionSheet({
+      itemList: ['确认准确', '修正内容', '拒绝此记忆'],
+      itemColor: '#008448',
+    })
+    if (sel.errMsg && !sel.errMsg.includes('ok')) return
+    const action = sel.tapIndex
+    if (action === 0) {
+      const r = await customerApi.confirmMemory(id, m.id, { confirmed: true })
+      Taro.showToast({ title: r.ok ? '已确认记忆' : r.error || '操作失败', icon: 'none' })
+      if (r.ok) load()
+    } else if (action === 1) {
+      const res = await showEditableModal({
+        title: `修正${keyLabel}`,
+        content: m.value || '',
+        placeholderText: '输入修正后的内容',
+        confirmColor: '#008448',
+      })
+      if (!res.confirm) return
+      const val = res.content?.trim()
+      if (!val) return
+      const r = await customerApi.confirmMemory(id, m.id, { confirmed: true, correctedValue: val })
+      Taro.showToast({ title: r.ok ? '已修正记忆' : r.error || '操作失败', icon: 'none' })
+      if (r.ok) load()
+    } else {
+      const r = await customerApi.confirmMemory(id, m.id, { confirmed: false })
+      Taro.showToast({ title: r.ok ? '已拒绝此记忆' : r.error || '操作失败', icon: 'none' })
+      if (r.ok) load()
+    }
+  }
+
+  // 记忆类型中文标签
+  function memoryKeyLabel(key?: string) {
+    const map: Record<string, string> = {
+      needs: '需求',
+      concerns: '顾虑',
+      emotional_needs: '情感需求',
+      decision_barriers: '决策障碍',
+    }
+    return map[key || ''] || key || '记忆'
+  }
+
+  // 到店签到
+  async function checkin() {
+    Taro.showLoading({ title: '签到中…', mask: true })
+    const r = await customerApi.checkin(id)
+    Taro.hideLoading()
+    if (r.ok) {
+      Taro.showToast({ title: '已到店签到', icon: 'success' })
+      load()
+    } else {
+      Taro.showToast({ title: r.error || '签到失败', icon: 'none' })
+    }
+  }
+
+  // 编辑客户：姓名 + 手机号
+  async function editCustomer() {
+    const nameRes = await showEditableModal({
+      title: '客户姓名',
+      content: c?.name || '',
+      placeholderText: '输入客户姓名',
+      confirmColor: '#008448',
+    })
+    if (!nameRes.confirm) return
+    const name = nameRes.content?.trim()
+    const phoneRes = await showEditableModal({
+      title: '客户手机号',
+      content: c?.phone || '',
+      placeholderText: '输入手机号（可选）',
+      confirmColor: '#008448',
+    })
+    if (!phoneRes.confirm) return
+    const phone = phoneRes.content?.trim()
+    if (!name && !phone) return
+    const data: any = {}
+    if (name) data.name = name
+    if (phone) data.phone = phone
+    const r = await customerApi.update(id, data)
+    if (r.ok) {
+      Taro.showToast({ title: '已保存客户资料', icon: 'none' })
+      load()
+    } else {
+      Taro.showToast({ title: r.error || '保存失败', icon: 'none' })
+    }
   }
 
   if (loading) {
@@ -87,6 +220,22 @@ export default function CustomerDetail() {
           <View className="ref-secondary cd-secondary" onClick={call}>
             致电
           </View>
+        </View>
+        <View className="cd-toolbar">
+          <View className="cd-tool" onClick={checkin}>
+            <Icon svg={ICN.home('#008448')} size={24} />
+            <Text>到店签到</Text>
+          </View>
+          <View className="cd-tool" onClick={editCustomer}>
+            <Icon svg={ICN.cog('#008448')} size={24} />
+            <Text>编辑资料</Text>
+          </View>
+          {isAdmin ? (
+            <View className="cd-tool cd-tool-merge" onClick={mergeCustomer}>
+              <Icon svg={ICN.plus('#d94b3d')} size={24} />
+              <Text>合并客户</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
@@ -158,11 +307,24 @@ export default function CustomerDetail() {
         <Text>AI 记忆</Text>
       </View>
       {memories.length === 0 ? (
-        <View className="ref-card memory-empty">暂无已确认记忆</View>
+        <View className="ref-card memory-empty">暂无记忆，可通过会谈分析沉淀</View>
       ) : (
         memories.map((m, i) => (
-          <View className="ref-card memory-item" key={i}>
-            <Text className="memory-text">{m.content || m}</Text>
+          <View className="ref-card memory-item" key={m.id || i}>
+            <View className="memory-head">
+              <Text className="memory-key">{memoryKeyLabel(m.key)}</Text>
+              {m.status === 'pending_review' ? (
+                <Text className="ref-status ref-status-yellow">待确认</Text>
+              ) : m.status === 'confirmed' ? (
+                <Text className="ref-status ref-status-green">已确认</Text>
+              ) : m.status === 'rejected' ? (
+                <Text className="ref-status ref-status-gray">已拒绝</Text>
+              ) : null}
+            </View>
+            <Text className="memory-text">{m.value || m.content || m}</Text>
+            <Text className="memory-op" onClick={() => handleMemory(m)}>
+              {m.status === 'rejected' ? '重新确认' : '确认 / 修正 / 拒绝'}
+            </Text>
           </View>
         ))
       )}
