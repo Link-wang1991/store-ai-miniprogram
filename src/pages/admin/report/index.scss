@@ -1,0 +1,71 @@
+.admin-report {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.back-btn { margin-top: 16px; }
+.rp-skeleton { height: 120px; }
+
+.gen-btn {
+  margin: 12px 0 0;
+}
+
+.rp-card { padding: 12px 14px; }
+
+.rp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rp-type {
+  font-size: 14px;
+  font-weight: 700;
+  color: $green-dark;
+}
+
+.rp-date {
+  font-size: 12px;
+  color: $faint;
+}
+
+.rp-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.rp-stat {
+  width: calc(50% - 4px);
+  background: $surface-2;
+  border-radius: 10px;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.rp-num {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: $ink;
+}
+
+.rp-k {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: $faint;
+}
+
+.rp-detail {
+  margin-top: 10px;
+  border-top: 1px solid $line;
+  padding-top: 8px;
+}
+
+.rp-line {
+  display: block;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.7;
+}

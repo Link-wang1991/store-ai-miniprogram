@@ -1,0 +1,210 @@
+.admin-page {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.back-btn {
+  margin-top: 16px;
+}
+
+// 待处理异常
+.ops-skeleton {
+  height: 120px;
+}
+
+.ops-card {
+  padding: 14px;
+}
+
+.ops-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ops-stat {
+  flex: 1;
+  background: $surface-2;
+  border-radius: 10px;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.ops-num {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+}
+.ops-num.critical { color: $red; }
+.ops-num.warning { color: $yellow; }
+.ops-num.total { color: $green; }
+
+.ops-k {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: $faint;
+}
+
+.ops-item {
+  padding: 10px 0;
+  border-top: 1px solid $line;
+}
+
+.ops-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ops-count {
+  font-size: 12px;
+  color: $muted;
+  font-weight: 600;
+}
+
+.ops-title {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.ops-detail {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: $faint;
+  line-height: 1.5;
+}
+
+// 经营模块
+.biz-skeleton {
+  height: 90px;
+}
+
+.biz-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.biz-card {
+  width: calc(50% - 6px);
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.biz-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ico-1 { background: #e9f8f2; }
+.ico-2 { background: #ffebe8; }
+.ico-3 { background: #eaf5fd; }
+.ico-4 { background: #fff4dd; }
+
+.biz-num {
+  display: block;
+  margin-top: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: $ink;
+}
+
+.biz-k {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $muted;
+}
+
+.biz-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: $faint;
+}
+
+// 员工排行
+.rank-card {
+  padding: 6px 14px;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid $line;
+}
+.rank-row:last-child { border-bottom: none; }
+
+.rank-idx {
+  width: 22px;
+  font-size: 13px;
+  font-weight: 700;
+  color: $faint;
+}
+
+.rank-name {
+  flex: 1;
+  font-size: 14px;
+  color: $ink;
+}
+
+.rank-count {
+  font-size: 12px;
+  color: $muted;
+  margin-right: 12px;
+}
+
+.rank-score {
+  font-size: 14px;
+  font-weight: 700;
+  color: $green;
+}
+.rank-score.low { color: $red; }
+
+// 管理入口
+.entry-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.entry-card {
+  width: calc(25% - 8px);
+  background: $paper;
+  border: 1px solid $line;
+  border-radius: 12px;
+  padding: 12px 6px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.entry-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.entry-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: $ink;
+  text-align: center;
+  line-height: 1.4;
+}

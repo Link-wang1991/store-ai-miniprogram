@@ -1,0 +1,40 @@
+.admin-exp {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.back-btn { margin-top: 16px; }
+.exp-skeleton { height: 100px; }
+
+.exp-card { padding: 12px 14px; }
+
+.exp-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.exp-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.exp-content {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+  max-height: 96px;
+  overflow: hidden;
+}
+
+.exp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  border-top: 1px solid $line;
+  padding-top: 10px;
+}

@@ -1,0 +1,82 @@
+.admin-bargain {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.back-btn { margin-top: 16px; }
+.bg-skeleton { height: 100px; }
+
+.sum-card { padding: 14px; }
+
+.sum-grid {
+  display: flex;
+  gap: 10px;
+}
+
+.sum-item {
+  flex: 1;
+  background: $surface-2;
+  border-radius: 10px;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.sum-num {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: $green;
+}
+.sum-num.red { color: $red; }
+.sum-num.yellow { color: $yellow; }
+
+.sum-k {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: $faint;
+}
+
+.bg-card { padding: 12px 14px; }
+
+.bg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bg-name { font-size: 14px; font-weight: 600; color: $ink; }
+
+.bg-score {
+  font-size: 16px;
+  font-weight: 700;
+}
+.bg-score.high { color: $green; }
+.bg-score.mid { color: $yellow; }
+.bg-score.low { color: $red; }
+.bg-score.na { color: $faint; }
+
+.bg-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.bg-block {
+  margin-top: 8px;
+  background: $surface-2;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.bg-label {
+  display: block;
+  font-size: 11px;
+  color: $faint;
+  margin-bottom: 4px;
+}
+
+.bg-text {
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+}

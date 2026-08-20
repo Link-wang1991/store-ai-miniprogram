@@ -1,0 +1,104 @@
+.admin-score {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.back-btn { margin-top: 16px; }
+.score-skeleton { height: 120px; }
+
+.calib-card { padding: 14px; }
+
+.calib-method {
+  display: block;
+  font-size: 12px;
+  color: $faint;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.calib-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.calib-item {
+  width: calc(50% - 6px);
+  background: $surface-2;
+  border-radius: 10px;
+  padding: 12px 0;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.calib-num {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: $green;
+}
+
+.calib-k {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: $muted;
+}
+
+.calib-int {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+  background: $green-soft;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.reason-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid $line;
+}
+.reason-row:last-child { border-bottom: none; }
+
+.reason-label { font-size: 14px; color: $ink; }
+.reason-count { font-size: 14px; font-weight: 600; color: $muted; }
+
+.rev-card { padding: 12px 14px; }
+
+.rev-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rev-name { font-size: 14px; font-weight: 600; color: $ink; }
+.rev-employee { font-size: 12px; color: $faint; }
+
+.rev-scores {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.rev-auto { color: $muted; }
+.rev-gap { color: $yellow; font-weight: 600; }
+.rev-manual { color: $green; font-weight: 700; }
+
+.rev-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.5;
+}
+
+.rev-date {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: $faint;
+}

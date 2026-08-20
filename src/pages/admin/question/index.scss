@@ -1,0 +1,75 @@
+.admin-question {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.q-skeleton { height: 100px; }
+
+.q-card { padding: 12px 14px; }
+
+.q-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.q-level {
+  font-size: 12px;
+  font-weight: 700;
+  color: $red;
+  background: $red-soft;
+  border-radius: 8px;
+  padding: 2px 8px;
+}
+
+.q-question {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1.5;
+}
+
+.q-suggestion {
+  margin-top: 8px;
+  background: $surface-2;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.q-sug-label {
+  display: block;
+  font-size: 11px;
+  color: $faint;
+  margin-bottom: 4px;
+}
+
+.q-sug-text {
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+}
+
+.q-reply {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: $green-dark;
+  line-height: 1.5;
+}
+
+.q-date {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: $faint;
+}
+
+.q-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  border-top: 1px solid $line;
+  padding-top: 10px;
+}

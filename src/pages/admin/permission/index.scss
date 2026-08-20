@@ -1,0 +1,87 @@
+.admin-perm {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.back-btn { margin-top: 16px; }
+.perm-skeleton { height: 120px; }
+
+.perm-tip {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: $faint;
+  line-height: 1.6;
+}
+
+.perm-group { padding: 12px 14px; }
+
+.perm-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.perm-group-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.perm-group-count {
+  font-size: 12px;
+  color: $faint;
+}
+
+.perm-items {
+  margin-top: 8px;
+  border-top: 1px solid $line;
+  padding-top: 4px;
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid $line;
+}
+.perm-item:last-child { border-bottom: none; }
+
+.perm-item-main { flex: 1; }
+
+.perm-code {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.perm-name {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: $faint;
+}
+
+.perm-switch {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: #dfe7e0;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.perm-switch.on { background: $green; }
+
+.perm-switch-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s;
+}
+.perm-switch.on .perm-switch-dot { left: 20px; }
