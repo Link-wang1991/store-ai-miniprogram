@@ -11,6 +11,7 @@ export default {
     'pages/tasks/index',
     'pages/platform/index',
     'pages/admin/index',
+    'pages/admin/customers/index',
     'pages/admin/knowledge/index',
     'pages/admin/data-switch/index',
     'pages/admin/staff/index',

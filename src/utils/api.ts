@@ -62,6 +62,7 @@ export const homeApi = {
 export const customerApi = {
   list: () => request<any[]>('/api/customers'),
   detail: (id: string) => request<any>(`/api/customers/${id}`),
+  create: (data: any) => request<any>('/api/customers', { method: 'POST', body: data }),
   update: (id: string, data: any) =>
     request<any>(`/api/customers/${id}/update`, { method: 'POST', body: data }),
   // 到店签到
@@ -80,6 +81,54 @@ export const customerApi = {
     request<any>(`/api/memory-confirmations/customers/${customerId}/memories/${memoryId}/confirm`, {
       method: 'POST',
       body: data,
+    }),
+}
+
+// -- 管理后台 · 客户（模板/导入） --
+export const customerAdminApi = {
+  /** 下载客户导入模板（CSV） */
+  downloadTemplate: () =>
+    new Promise<{ ok: boolean; error?: string }>((resolve) => {
+      const token = getToken()
+      const header = token ? { Authorization: `Bearer ${token}` } : {}
+      Taro.downloadFile({
+        url: `${API_BASE_URL}/api/admin/customers/template`,
+        header,
+        success: (res) => {
+          if (res.statusCode !== 200 || !res.tempFilePath) {
+            resolve({ ok: false, error: `下载失败(${res.statusCode})` })
+            return
+          }
+          Taro.openDocument({
+            filePath: res.tempFilePath,
+            showMenu: true,
+            fileType: 'docx' as any,
+            success: () => resolve({ ok: true }),
+            fail: () => resolve({ ok: true }),
+          })
+        },
+        fail: () => resolve({ ok: false, error: '下载网络错误' }),
+      })
+    }),
+  /** 批量导入客户（multipart CSV） */
+  import: (filePath: string) =>
+    new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {
+      const token = getToken()
+      Taro.uploadFile({
+        url: `${API_BASE_URL}/api/admin/customers/import`,
+        filePath,
+        name: 'file',
+        header: token ? { Authorization: `Bearer ${token}` } : {},
+        success: (res) => {
+          try {
+            const j = JSON.parse(res.data)
+            resolve(j.code === 200 ? { ok: true, data: j.data } : { ok: false, error: j.message || '导入失败' })
+          } catch {
+            resolve({ ok: res.statusCode === 200, error: '导入结果解析失败' })
+          }
+        },
+        fail: () => resolve({ ok: false, error: '上传网络错误' }),
+      })
     }),
 }
 
@@ -309,6 +358,32 @@ export const dataResetApi = {
   preview: () => request<any>('/api/admin/data-reset/preview'),
   /** 生成本地 JSON 备份 */
   backup: () => request<any>('/api/admin/data-reset/backup', { method: 'POST' }),
+  /** 本店已生成的备份文件列表 */
+  backups: () => request<any[]>('/api/admin/data-reset/backups'),
+  /** 下载备份文件：先下载到临时文件，再调用 openDocument 预览/另存 */
+  download: (fileName: string) =>
+    new Promise<{ ok: boolean; error?: string }>((resolve) => {
+      const token = getToken()
+      const header = token ? { Authorization: `Bearer ${token}` } : {}
+      Taro.downloadFile({
+        url: `${API_BASE_URL}/api/admin/data-reset/backup/${encodeURIComponent(fileName)}`,
+        header,
+        success: (res) => {
+          if (res.statusCode !== 200 || !res.tempFilePath) {
+            resolve({ ok: false, error: `下载失败(${res.statusCode})` })
+            return
+          }
+          Taro.openDocument({
+            filePath: res.tempFilePath,
+            showMenu: true,
+            fileType: 'docx' as any,
+            success: () => resolve({ ok: true }),
+            fail: () => resolve({ ok: true, error: '已下载，请在临时文件中选择保存位置' }),
+          })
+        },
+        fail: () => resolve({ ok: false, error: '下载网络错误' }),
+      })
+    }),
   /** 备份后清空经营数据（仅老板，需输入确认词） */
   clear: (confirmation: string) =>
     request<any>('/api/admin/data-reset/clear', {
@@ -324,6 +399,58 @@ export const employeeAdminApi = {
   /** 老板体验员工身份 */
   previewLogin: (employeeId: string) =>
     request<any>(`/api/admin/employees/${employeeId}/preview-login`, { method: 'POST' }),
+  /** 全店员工列表 */
+  all: () => request<any[]>('/api/admin/employees/all'),
+  /** 新增员工账号 */
+  create: (data: { name: string; email: string; password: string; phone?: string; role: string }) =>
+    request<any>('/api/admin/employees', { method: 'POST', body: data }),
+  /** 停用员工 */
+  deactivate: (employeeId: string) =>
+    request<any>(`/api/admin/employees/${employeeId}/deactivate`, { method: 'POST' }),
+  /** 下载员工导入模板（CSV） */
+  downloadTemplate: () =>
+    new Promise<{ ok: boolean; error?: string }>((resolve) => {
+      const token = getToken()
+      const header = token ? { Authorization: `Bearer ${token}` } : {}
+      Taro.downloadFile({
+        url: `${API_BASE_URL}/api/admin/employees/template`,
+        header,
+        success: (res) => {
+          if (res.statusCode !== 200 || !res.tempFilePath) {
+            resolve({ ok: false, error: `下载失败(${res.statusCode})` })
+            return
+          }
+          Taro.openDocument({
+            filePath: res.tempFilePath,
+            showMenu: true,
+            fileType: 'docx' as any,
+            success: () => resolve({ ok: true }),
+            fail: () => resolve({ ok: true }),
+          })
+        },
+        fail: () => resolve({ ok: false, error: '下载网络错误' }),
+      })
+    }),
+  /** 批量导入员工（multipart CSV） */
+  import: (filePath: string) =>
+    new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {
+      const token = getToken()
+      Taro.uploadFile({
+        url: `${API_BASE_URL}/api/admin/employees/import`,
+        filePath,
+        name: 'file',
+        header: token ? { Authorization: `Bearer ${token}` } : {},
+        success: (res) => {
+          try {
+            const j = JSON.parse(res.data)
+            resolve(j.code === 200 ? { ok: true, data: j.data } : { ok: false, error: j.message || '导入失败' })
+          } catch {
+            resolve({ ok: res.statusCode === 200, error: '导入结果解析失败' })
+          }
+        },
+        fail: () => resolve({ ok: false, error: '上传网络错误' }),
+      })
+    }),
 }
 
 // -- 管理后台 · 风险复盘 --
