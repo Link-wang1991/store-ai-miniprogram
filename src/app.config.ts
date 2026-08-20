@@ -9,7 +9,20 @@ export default {
     'pages/meeting-detail/index',
     'pages/customer-detail/index',
     'pages/tasks/index',
-    'pages/platform/index'
+    'pages/platform/index',
+    'pages/admin/index',
+    'pages/admin/knowledge/index',
+    'pages/admin/data-switch/index',
+    'pages/admin/staff/index',
+    'pages/admin/experience/index',
+    'pages/admin/bargain/index',
+    'pages/admin/score/index',
+    'pages/admin/inspect/index',
+    'pages/admin/report/index',
+    'pages/admin/risk/index',
+    'pages/admin/question/index',
+    'pages/admin/notice/index',
+    'pages/admin/permission/index'
   ],
   window: {
     navigationBarTitleText: '门店AI',

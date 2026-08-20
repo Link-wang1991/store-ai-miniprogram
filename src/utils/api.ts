@@ -294,3 +294,140 @@ export const superAdminApi = {
   initStore: (id: string) =>
     request(`/api/super-admin/stores/${id}/init`, { method: 'POST' }),
 }
+
+// -- 店长驾驶舱 / 运营监控（管理后台） --
+export const adminApi = {
+  /** 店长驾驶舱：今日会谈、合规风险、任务、员工排行、低分会谈等 */
+  dashboard: () => request<any>('/api/dashboard/manager'),
+  /** 异常运营总览：会谈失败/停滞、知识到期、逾期任务、AI 兜底等 */
+  operationsOverview: () => request<any>('/api/admin/operations/overview'),
+}
+
+// -- 数据切换（备份/清空经营数据） --
+export const dataResetApi = {
+  /** 预览各业务表数据量 */
+  preview: () => request<any>('/api/admin/data-reset/preview'),
+  /** 生成本地 JSON 备份 */
+  backup: () => request<any>('/api/admin/data-reset/backup', { method: 'POST' }),
+  /** 备份后清空经营数据（仅老板，需输入确认词） */
+  clear: (confirmation: string) =>
+    request<any>('/api/admin/data-reset/clear', {
+      method: 'POST',
+      body: { confirmation },
+    }),
+}
+
+// -- 管理后台 · 员工账号 --
+export const employeeAdminApi = {
+  /** 同店可切换的账号列表（管理员） */
+  switchable: () => request<any[]>('/api/admin/employees/switchable'),
+  /** 老板体验员工身份 */
+  previewLogin: (employeeId: string) =>
+    request<any>(`/api/admin/employees/${employeeId}/preview-login`, { method: 'POST' }),
+}
+
+// -- 管理后台 · 风险复盘 --
+export const riskAdminApi = {
+  list: (status?: string) =>
+    request<any[]>(`/api/admin/risk-logs${status ? `?status=${status}` : ''}`),
+  summary: () => request<any>('/api/admin/risk-logs/summary'),
+  handle: (id: string, resolution?: string) =>
+    request<any>(`/api/admin/risk-logs/${id}/handle`, { method: 'POST', body: { resolution } }),
+}
+
+// -- 管理后台 · 议价复盘 --
+export const bargainReviewApi = {
+  list: () => request<any[]>('/api/admin/bargain-reviews'),
+  summary: () => request<any>('/api/admin/bargain-reviews/summary'),
+}
+
+// -- 管理后台 · 经营报告（增长复盘） --
+export const reportApi = {
+  list: () => request<any[]>('/api/admin/reports'),
+  generate: (type?: string) =>
+    request<any>(`/api/admin/reports/generate${type ? `?type=${type}` : ''}`, { method: 'POST' }),
+}
+
+// -- 管理后台 · 通知公告 --
+export const announcementApi = {
+  list: () => request<any[]>('/api/admin/announcements'),
+  create: (data: { title: string; content: string; type?: string; priority?: string; visibleRoles?: string[] }) =>
+    request<any>('/api/admin/announcements', { method: 'POST', body: data }),
+  deactivate: (id: string) =>
+    request<any>(`/api/admin/announcements/${id}/deactivate`, { method: 'POST' }),
+}
+
+// -- 管理后台 · 评分复盘 --
+export const qualityReviewApi = {
+  calibration: () => request<any>('/api/meetings/quality-calibration'),
+}
+
+// -- 管理后台 · 提问复盘 --
+export const pendingQuestionApi = {
+  list: () => request<any[]>('/api/pending-questions'),
+  assign: (id: string, assigneeId: string) =>
+    request<any>(`/api/pending-questions/${id}/assign?assigneeId=${encodeURIComponent(assigneeId)}`, { method: 'POST' }),
+  ack: (id: string) => request<any>(`/api/pending-questions/${id}/ack`, { method: 'POST' }),
+  resolve: (id: string, reply: string) =>
+    request<any>(`/api/pending-questions/${id}/resolve`, { method: 'POST', body: { reply } }),
+  escalate: (id: string, reason: string) =>
+    request<any>(`/api/pending-questions/${id}/escalate`, { method: 'POST', body: { reason } }),
+}
+
+// -- 管理后台 · 经验复板（审核） --
+export const experienceAdminApi = {
+  listPending: () => request<any[]>('/api/experience-reviews'),
+  approve: (id: string, data: { title: string; category: string; content: string; visibleRoles?: string[] }) =>
+    request<any>(`/api/experience-reviews/${id}/approve`, { method: 'POST', body: data }),
+  reject: (id: string, reason: string) =>
+    request<any>(`/api/experience-reviews/${id}/reject`, { method: 'POST', body: { reason } }),
+}
+
+// -- 管理后台 · 权限管理（门店自定义配置） --
+export const storeConfigApi = {
+  list: () => request<any[]>('/api/store-config'),
+  replaceCategory: (category: string, items: any[]) =>
+    request<any>(`/api/store-config/${category}`, { method: 'PUT', body: { items } }),
+}
+
+// -- 管理后台 · 知识库（门店资料管理） --
+export const knowledgeAdminApi = {
+  list: (category?: string) =>
+    request<any[]>(`/api/knowledge${category ? `?category=${encodeURIComponent(category)}` : ''}`),
+  /** 上传文件资料（multipart，AI 自动切分分类） */
+  upload: (filePath: string, data: { title: string; category: string; tags?: string; remark?: string; status?: string }) =>
+    new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {
+      const token = getToken()
+      Taro.uploadFile({
+        url: `${API_BASE_URL}/api/knowledge/upload`,
+        filePath,
+        name: 'file',
+        formData: {
+          title: data.title,
+          category: data.category,
+          tags: data.tags || '',
+          remark: data.remark || '',
+          status: data.status || 'active',
+        },
+        header: token ? { Authorization: `Bearer ${token}` } : {},
+        success: (res) => {
+          try {
+            const j = JSON.parse(res.data)
+            resolve(j.code === 200 ? { ok: true, data: j.data } : { ok: false, error: j.message || '上传失败' })
+          } catch {
+            resolve({ ok: res.statusCode === 200, data: res.data })
+          }
+        },
+        fail: () => resolve({ ok: false, error: '上传网络错误' }),
+      })
+    }),
+  /** 手动输入知识（纯文本） */
+  createManual: (data: { title: string; category: string; content: string; tags?: string; remark?: string }) =>
+    request<any>('/api/knowledge/manual', { method: 'POST', body: data }),
+  /** 停用/启用 */
+  toggle: (id: string) =>
+    request<any>(`/api/knowledge/${id}/toggle`, { method: 'POST' }),
+  /** 删除 */
+  delete: (id: string) =>
+    request<any>(`/api/knowledge/${id}/delete`, { method: 'POST' }),
+}

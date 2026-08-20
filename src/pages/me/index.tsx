@@ -76,25 +76,29 @@ export default function Me() {
       </View>
 
       {isMgmt ? (
-        <View
-          className="ref-card mgmt-card"
-          onClick={() =>
-            Taro.showModal({
-              title: '管理后台即将开放',
-              content: '员工、知识库、权限、数据看板等管理能力建议先在 Web 管理端使用，小程序轻量管理入口正在建设中。',
-              showCancel: false,
-              confirmText: '知道了',
-              confirmColor: '#008448',
-            })
-          }
-        >
-          <View className="mgmt-ico"><Icon svg={ICN.cog('#008448')} size={40} /></View>
-          <View className="mgmt-main">
-            <Text className="mgmt-title">管理后台</Text>
-            <Text className="mgmt-sub">员工、知识库、权限、数据看板 · 即将开放</Text>
+        <>
+          <View className="section-title">
+            <Text>管理</Text>
           </View>
-          <Text className="mgmt-arrow">›</Text>
-        </View>
+          <View className="mgmt-grid">
+            <View className="mgmt-card" onClick={() => Taro.navigateTo({ url: '/pages/admin/index' })}>
+              <View className="mgmt-ico"><Icon svg={ICN.cog('#008448')} size={38} /></View>
+              <View className="mgmt-main">
+                <Text className="mgmt-title">管理后台</Text>
+                <Text className="mgmt-sub">经营看板 · 待处理异常 · 各管理入口</Text>
+              </View>
+              <Text className="mgmt-arrow">›</Text>
+            </View>
+            <View className="mgmt-card" onClick={() => Taro.navigateTo({ url: '/pages/admin/data-switch/index' })}>
+              <View className="mgmt-ico"><Icon svg={ICN.refresh('#008448')} size={38} /></View>
+              <View className="mgmt-main">
+                <Text className="mgmt-title">数据切换</Text>
+                <Text className="mgmt-sub">预览 · 备份 · 清空经营数据（仅老板）</Text>
+              </View>
+              <Text className="mgmt-arrow">›</Text>
+            </View>
+          </View>
+        </>
       ) : null}
 
       <View className="btn-logout" onClick={onLogout}>

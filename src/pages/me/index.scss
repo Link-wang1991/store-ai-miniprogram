@@ -84,10 +84,20 @@
   color: $ink;
 }
 
-// 管理入口
-.mgmt-card {
+// 管理入口（管理后台 + 数据切换 两列）
+.mgmt-grid {
   display: flex;
-  align-items: center;
+  gap: 12px;
+}
+
+.mgmt-card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 .mgmt-ico {
@@ -95,8 +105,7 @@
 }
 
 .mgmt-main {
-  flex: 1;
-  margin-left: 10px;
+  margin-top: 10px;
 }
 
 .mgmt-title {
@@ -111,9 +120,11 @@
   margin-top: 3px;
   font-size: 12px;
   color: $faint;
+  line-height: 1.5;
 }
 
 .mgmt-arrow {
+  margin-top: 8px;
   font-size: 14px;
   color: $faint;
 }
