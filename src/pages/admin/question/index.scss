@@ -2,6 +2,8 @@
   padding-bottom: calc(60px + env(safe-area-inset-bottom));
 }
 
+.q-back { margin-top: 16px; }
+
 .q-skeleton { height: 100px; }
 
 .q-card { padding: 12px 14px; }
@@ -72,4 +74,10 @@
   margin-top: 10px;
   border-top: 1px solid $line;
   padding-top: 10px;
+}
+
+.q-readonly {
+  font-size: 12px;
+  color: $faint;
+  line-height: 30px;
 }

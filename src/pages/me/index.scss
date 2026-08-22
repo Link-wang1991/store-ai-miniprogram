@@ -1,4 +1,4 @@
-// 我的页 —— 对齐 Web me 页（渐变底 + 4 快捷卡 + 管理入口 + 退出）
+// 我的页 —— 对齐手机 Web：角色化工作入口 + 经营决策入口 + 退出
 .me-page {
   padding: 0 16px calc(80px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, #f9fdf9 0%, #f4fbf3 40%, #f7fbf7 100%);
@@ -127,6 +127,15 @@
   margin-top: 8px;
   font-size: 14px;
   color: $faint;
+}
+
+.mgmt-count {
+  display: block;
+  margin-top: 10px;
+  color: $green;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 // 退出登录

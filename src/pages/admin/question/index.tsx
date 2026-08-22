@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { pendingQuestionApi, taskApi } from '@/utils/api'
+import { pendingQuestionApi } from '@/utils/api'
 import { getUserInfo, isLoggedIn } from '@/utils/auth'
 import { fmtDate } from '@/utils/format'
 import { showEditableModal } from '@/utils/ui'
@@ -13,11 +13,16 @@ const STATUS_META: Record<string, [string, string]> = {
   handling: ['处理中', 'ref-status-blue'],
   resolved: ['已解决', 'ref-status-green'],
   escalated: ['已升级', 'ref-status-red'],
+  review_pending: ['待知识审核', 'ref-status-blue'],
 }
+
+const MANAGEMENT_ROLES = new Set(['owner', 'admin', 'manager', 'operator'])
+const FULL_MANAGEMENT_ROLES = new Set(['owner', 'admin', 'manager'])
 
 export default function AdminQuestion() {
   const user = getUserInfo()
-  const isMgmt = !!user && ['owner', 'admin', 'manager'].includes(user.role)
+  const canAccess = !!user && MANAGEMENT_ROLES.has(user.role)
+  const canManageAll = !!user && FULL_MANAGEMENT_ROLES.has(user.role)
   const [loading, setLoading] = useState(true)
   const [list, setList] = useState<any[]>([])
   const [busy, setBusy] = useState(false)
@@ -27,7 +32,8 @@ export default function AdminQuestion() {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
-    load()
+    if (canAccess) load()
+    else setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -36,6 +42,11 @@ export default function AdminQuestion() {
   })
 
   async function load() {
+    if (!canAccess) {
+      setLoading(false)
+      Taro.stopPullDownRefresh()
+      return
+    }
     setLoading(true)
     const r = await pendingQuestionApi.list()
     if (r.ok) setList(r.data || [])
@@ -46,7 +57,7 @@ export default function AdminQuestion() {
 
   // 指派给某员工
   async function assign(q: any) {
-    const a = await taskApi.assignees()
+    const a = await pendingQuestionApi.assignees()
     const staff = a.ok ? (a.data || []) : []
     if (staff.length === 0) {
       Taro.showToast({ title: '暂无其他可指派员工', icon: 'none' })
@@ -99,6 +110,15 @@ export default function AdminQuestion() {
 
   const st = (s?: string) => STATUS_META[s || 'pending'] || STATUS_META.pending
 
+  if (!user || !canAccess) {
+    return (
+      <View className="page admin-question">
+        <View className="ref-empty">无权限访问</View>
+        <View className="ref-primary q-back" onClick={() => Taro.navigateBack()}>返回</View>
+      </View>
+    )
+  }
+
   return (
     <View className="page admin-question">
       <View className="page-header">
@@ -116,6 +136,7 @@ export default function AdminQuestion() {
       ) : (
         list.map((q, i) => {
           const [label, tag] = st(q.status)
+          const canHandle = canManageAll || q.assigned_to === user.employeeId
           return (
             <View className="ref-card q-card" key={q.id || i}>
               <View className="q-head">
@@ -131,14 +152,18 @@ export default function AdminQuestion() {
               ) : null}
               {q.reply ? <Text className="q-reply">处理：{q.reply}</Text> : null}
               <Text className="q-date">{fmtDate(q.created_at)}</Text>
-              {q.status !== 'resolved' && q.status !== 'escalated' ? (
+              {!['resolved', 'escalated', 'review_pending'].includes(q.status) ? (
                 <View className="q-actions">
-                  {isMgmt ? (
+                  {canManageAll ? (
                     <View className="ref-btn-sm ref-btn-sm-ghost" onClick={() => assign(q)}>指派</View>
                   ) : null}
-                  <View className="ref-btn-sm ref-btn-sm-plain" onClick={() => ack(q)}>确认</View>
-                  <View className="ref-btn-sm ref-btn-sm-primary" onClick={() => resolve(q)}>解决</View>
-                  <View className="ref-btn-sm ref-btn-sm-danger" onClick={() => escalate(q)}>升级</View>
+                  {canHandle ? (
+                    <>
+                      <View className="ref-btn-sm ref-btn-sm-plain" onClick={() => ack(q)}>确认</View>
+                      <View className="ref-btn-sm ref-btn-sm-primary" onClick={() => resolve(q)}>解决</View>
+                      <View className="ref-btn-sm ref-btn-sm-danger" onClick={() => escalate(q)}>升级</View>
+                    </>
+                  ) : <Text className="q-readonly">待负责人接收后处理</Text>}
                 </View>
               ) : null}
             </View>

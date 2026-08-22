@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "store-ai-miniprogram",
   "description": "门店AI 微信小程序",
-  "appid": "wx6ade085c48e2a736",
+  "appid": "wx4ebe40476a574afb",
   "setting": {
     "urlCheck": false,
     "es6": true,

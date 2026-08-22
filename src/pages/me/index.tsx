@@ -4,12 +4,19 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { getUserInfo, logout, isLoggedIn, type UserInfo } from '@/utils/auth'
 import Icon from '@/components/Icon'
 import { ICN } from '@/utils/icons'
-import { openCoach } from '@/utils/navigation'
+import { adminApi, pendingQuestionApi, taskApi } from '@/utils/api'
 import { setActiveTab } from '@/utils/ui'
 import './index.scss'
 
+const MANAGEMENT_ROLES = new Set(['owner', 'admin', 'manager', 'operator'])
+const ESCALATION_ROLES = new Set(['admin', 'manager', 'operator'])
+const CLOSED_QUESTION_STATUSES = new Set(['resolved', 'escalated', 'review_pending'])
+
 export default function Me() {
   const [user, setUser] = useState<UserInfo | null>(null)
+  const [openTaskCount, setOpenTaskCount] = useState<number | null>(null)
+  const [openQuestionCount, setOpenQuestionCount] = useState<number | null>(null)
+  const [operations, setOperations] = useState<{ critical: number; warning: number } | null>(null)
 
   useDidShow(() => {
     setActiveTab(4)
@@ -20,8 +27,35 @@ export default function Me() {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
-    setUser(getUserInfo())
+    const current = getUserInfo()
+    setUser(current)
+    if (!current || !MANAGEMENT_ROLES.has(current.role)) return
+
+    void loadManagementSummary(current.role)
   }, [])
+
+  async function loadManagementSummary(role: string) {
+    const requests: Promise<any>[] = [adminApi.operationsOverview()]
+    if (role === 'owner') requests.unshift(pendingQuestionApi.list())
+    else requests.unshift(taskApi.list())
+    const [workResult, operationsResult] = await Promise.allSettled(requests)
+
+    if (workResult.status === 'fulfilled' && workResult.value.ok) {
+      const list = Array.isArray(workResult.value.data) ? workResult.value.data : []
+      if (role === 'owner') {
+        setOpenQuestionCount(list.filter((item: any) => !CLOSED_QUESTION_STATUSES.has(String(item.status || 'pending'))).length)
+      } else {
+        setOpenTaskCount(list.filter((item: any) => !['done', 'completed', 'canceled'].includes(String(item.status || ''))).length)
+      }
+    }
+
+    if (operationsResult.status === 'fulfilled' && operationsResult.value.ok) {
+      const summary = operationsResult.value.data?.summary
+      const critical = Number(summary?.critical)
+      const warning = Number(summary?.warning)
+      if (Number.isFinite(critical) && Number.isFinite(warning)) setOperations({ critical, warning })
+    }
+  }
 
   function onLogout() {
     Taro.showModal({
@@ -36,7 +70,17 @@ export default function Me() {
     })
   }
 
-  const isMgmt = !!user && ['owner', 'admin', 'manager'].includes(user.role)
+  const isMgmt = !!user && MANAGEMENT_ROLES.has(user.role)
+  const isOwner = user?.role === 'owner'
+  const isEscalationRole = !!user && ESCALATION_ROLES.has(user.role)
+  const actionRequiredOperations = operations ? operations.critical + operations.warning : null
+  const operationsDescription = actionRequiredOperations === null
+    ? '经营提醒暂不可用'
+    : operations?.critical
+      ? `${operations.critical} 项需优先处理`
+      : operations?.warning
+        ? `${operations.warning} 项待关注`
+        : '运营状态正常'
 
   return (
     <View className="page me-page">
@@ -53,49 +97,43 @@ export default function Me() {
         </View>
       </View>
 
-      <View className="section-title">
-        <Text>常用</Text>
-      </View>
-      <View className="quick-grid">
-        <View className="quick-card" onClick={() => Taro.switchTab({ url: '/pages/chat/index' })}>
-          <View className="quick-ico ico-1"><Icon svg={ICN.psy('#008448')} size={36} /></View>
-          <Text className="quick-label">AI教练</Text>
-        </View>
-        <View className="quick-card" onClick={() => Taro.switchTab({ url: '/pages/meeting/index' })}>
-          <View className="quick-ico ico-2"><Icon svg={ICN.mic('#008448')} size={36} /></View>
-          <Text className="quick-label">会谈</Text>
-        </View>
-        <View className="quick-card" onClick={() => Taro.navigateTo({ url: '/pages/tasks/index' })}>
-          <View className="quick-ico ico-3"><Icon svg={ICN.check('#008448')} size={36} /></View>
-          <Text className="quick-label">我的任务</Text>
-        </View>
-        <View className="quick-card" onClick={() => openCoach()}>
-          <View className="quick-ico ico-4"><Icon svg={ICN.chat('#008448')} size={36} /></View>
-          <Text className="quick-label">提交问题</Text>
-        </View>
-      </View>
+      {!isOwner ? (
+        <>
+          <View className="section-title"><Text>我的工作</Text></View>
+          <View className="quick-grid">
+            <View className="quick-card" onClick={() => Taro.navigateTo({ url: '/pages/tasks/index' })}>
+              <View className="quick-ico ico-1"><Icon svg={ICN.check('#008448')} size={36} /></View>
+              <Text className="quick-label">我的任务</Text>
+            </View>
+            <View className="quick-card" onClick={() => Taro.navigateTo({ url: '/pages/submit/index' })}>
+              <View className="quick-ico ico-2"><Icon svg={ICN.arrow('#008448')} size={36} /></View>
+              <Text className="quick-label">{isEscalationRole ? '上报问题' : '提交问题'}</Text>
+            </View>
+          </View>
+        </>
+      ) : null}
 
       {isMgmt ? (
         <>
           <View className="section-title">
-            <Text>管理</Text>
+            <Text>{isOwner ? '经营决策' : '经营管理'}</Text>
           </View>
           <View className="mgmt-grid">
-            <View className="mgmt-card" onClick={() => Taro.navigateTo({ url: '/pages/admin/index' })}>
-              <View className="mgmt-ico"><Icon svg={ICN.cog('#008448')} size={38} /></View>
+            <View className="mgmt-card" onClick={() => Taro.navigateTo({ url: isOwner ? '/pages/admin/question/index' : '/pages/tasks/index?from=me' })}>
+              <View className="mgmt-ico"><Icon svg={ICN.check('#008448')} size={38} /></View>
               <View className="mgmt-main">
-                <Text className="mgmt-title">管理后台</Text>
-                <Text className="mgmt-sub">经营看板 · 待处理异常 · 各管理入口</Text>
+                <Text className="mgmt-title">待我处理</Text>
+                <Text className="mgmt-sub">{isOwner ? '待确认、审批与风险升级' : '我的正式任务'}</Text>
               </View>
-              <Text className="mgmt-arrow">›</Text>
+              <Text className="mgmt-count">{isOwner ? (openQuestionCount === null ? '—' : openQuestionCount) : (openTaskCount === null ? '—' : openTaskCount)}</Text>
             </View>
-            <View className="mgmt-card" onClick={() => Taro.navigateTo({ url: '/pages/admin/data-switch/index' })}>
-              <View className="mgmt-ico"><Icon svg={ICN.refresh('#008448')} size={38} /></View>
+            <View className="mgmt-card" onClick={() => Taro.navigateTo({ url: '/pages/admin/inspect/index' })}>
+              <View className="mgmt-ico"><Icon svg={ICN.warn('#008448')} size={38} /></View>
               <View className="mgmt-main">
-                <Text className="mgmt-title">数据切换</Text>
-                <Text className="mgmt-sub">预览 · 备份 · 清空经营数据（仅老板）</Text>
+                <Text className="mgmt-title">经营提醒</Text>
+                <Text className="mgmt-sub">{operationsDescription}</Text>
               </View>
-              <Text className="mgmt-arrow">›</Text>
+              <Text className="mgmt-count">{actionRequiredOperations === null ? '—' : actionRequiredOperations}</Text>
             </View>
           </View>
         </>

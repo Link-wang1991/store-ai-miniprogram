@@ -84,9 +84,9 @@ export const customerApi = {
     }),
 }
 
-// -- 管理后台 · 客户（模板/导入） --
+// -- 管理后台 · 客户（Word/Excel/CSV 模板与导入） --
 export const customerAdminApi = {
-  /** 下载客户导入模板（CSV） */
+  /** 下载客户导入 Word 模板 */
   downloadTemplate: () =>
     new Promise<{ ok: boolean; error?: string }>((resolve) => {
       const token = getToken()
@@ -110,7 +110,7 @@ export const customerAdminApi = {
         fail: () => resolve({ ok: false, error: '下载网络错误' }),
       })
     }),
-  /** 批量导入客户（multipart CSV） */
+  /** 批量导入客户（Word、Excel 或 CSV） */
   import: (filePath: string) =>
     new Promise<{ ok: boolean; data?: any; error?: string }>((resolve) => {
       const token = getToken()
@@ -492,6 +492,9 @@ export const qualityReviewApi = {
 // -- 管理后台 · 提问复盘 --
 export const pendingQuestionApi = {
   list: () => request<any[]>('/api/pending-questions'),
+  assignees: () => request<any[]>('/api/pending-questions/assignees'),
+  create: (question: string) =>
+    request<any>('/api/pending-questions', { method: 'POST', body: { question } }),
   assign: (id: string, assigneeId: string) =>
     request<any>(`/api/pending-questions/${id}/assign?assigneeId=${encodeURIComponent(assigneeId)}`, { method: 'POST' }),
   ack: (id: string) => request<any>(`/api/pending-questions/${id}/ack`, { method: 'POST' }),

@@ -113,7 +113,11 @@ export default function AdminCustomers() {
   }
 
   async function importCustomers() {
-    const res = await Taro.chooseMessageFile({ count: 1, type: 'file' })
+    const res = await Taro.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['doc', 'docx', 'xls', 'xlsx', 'csv'],
+    })
     if (!res.tempFiles || !res.tempFiles.length) return
     Taro.showLoading({ title: '导入中…' })
     const r = await customerAdminApi.import(res.tempFiles[0].path)

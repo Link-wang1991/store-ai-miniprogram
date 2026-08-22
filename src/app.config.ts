@@ -9,6 +9,7 @@ export default {
     'pages/meeting-detail/index',
     'pages/customer-detail/index',
     'pages/tasks/index',
+    'pages/submit/index',
     'pages/platform/index',
     'pages/admin/index',
     'pages/admin/customers/index',

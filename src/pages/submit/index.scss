@@ -1,0 +1,52 @@
+.submit-page {
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+.submit-card {
+  padding: 16px;
+}
+
+.submit-desc {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: $ink;
+}
+
+.submit-guide {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: $muted;
+}
+
+.submit-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 168px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid $line;
+  border-radius: 12px;
+  background: #fff;
+  color: $ink;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.submit-placeholder {
+  color: $faint;
+}
+
+.submit-count {
+  margin-top: 7px;
+  text-align: right;
+  font-size: 11px;
+  color: $faint;
+}
+
+.submit-button {
+  margin-top: 16px;
+  text-align: center;
+}
